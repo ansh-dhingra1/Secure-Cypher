@@ -968,6 +968,22 @@ section.upcoming-meetings .row {
   flex-wrap: wrap;
 }
 
+/* Team section specific styling */
+section.upcoming-meetings .meeting-item {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+section.upcoming-meetings .meeting-item .down-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+/* Ensure team cards have equal heights */
 section.upcoming-meetings .col-lg-6 {
   display: flex;
   margin-bottom: 30px;
@@ -1020,8 +1036,9 @@ section.upcoming-meetings .col-lg-6 .meeting-item {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   min-height: 200px;
+  gap: 10px;
 }
 
 .meeting-item .down-content .date {
@@ -1067,18 +1084,19 @@ section.upcoming-meetings .col-lg-6 .meeting-item {
 
 /* Team role styling for consistent alignment */
 .meeting-item .down-content .team-role {
-  margin-top: 10px;
+  margin-top: 5px;
   margin-bottom: 0;
   font-size: 18px;
   color: #a12c2f;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  line-height: 1.3;
 }
 
 /* Team skills list styling */
 .meeting-item .down-content .team-skills {
-  margin-top: 15px;
+  margin-top: 10px;
   margin-bottom: 0;
   padding-left: 20px;
   list-style-type: disc;
@@ -1087,9 +1105,22 @@ section.upcoming-meetings .col-lg-6 .meeting-item {
 .meeting-item .down-content .team-skills li {
   color: #1f272b;
   font-size: 15px;
-  margin-bottom: 8px;
-  line-height: 1.5;
+  margin-bottom: 6px;
+  line-height: 1.4;
   font-weight: 400;
+}
+
+/* Contact link styling */
+.meeting-item .down-content h4 a {
+  color: #1f272b;
+  text-decoration: none;
+  font-weight: 700;
+  transition: color 0.3s ease;
+}
+
+.meeting-item .down-content h4 a:hover {
+  color: #a12c2f;
+  text-decoration: underline;
 }
 
 /* Responsive adjustments for card alignment */
