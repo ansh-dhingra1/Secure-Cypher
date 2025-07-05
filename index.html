@@ -891,33 +891,62 @@ This is for courses
   </section>
 <script>
 
-document.querySelectorAll('.accordion-head').forEach(head => {
-    head.addEventListener('click', () => {
-      const body = head.nextElementSibling;
-      const isOpen = head.classList.contains('is-open');
+// Improved accordion functionality
+function initAccordion() {
+  document.querySelectorAll('.accordion-head').forEach(head => {
+    head.addEventListener('click', function() {
+      const body = this.nextElementSibling;
+      const isOpen = this.classList.contains('is-open');
       
+      // Close all other accordions first
+      document.querySelectorAll('.accordion-head.is-open').forEach(h => {
+        if (h !== this) {
+          h.classList.remove('is-open');
+          h.style.maxHeight = '0px';
+        }
+      });
+      
+      // Toggle current accordion
       if (isOpen) {
         // Close this one
-        head.classList.remove('is-open');
-        body.style.height = 0;
+        this.classList.remove('is-open');
+        body.style.maxHeight = '0px';
       } else {
-        // Optionally close others:
-        document.querySelectorAll('.accordion-head.is-open').forEach(h => {
-          h.classList.remove('is-open');
-          h.nextElementSibling.style.height = 0;
-        });
         // Open this one
-        head.classList.add('is-open');
-        body.style.height = body.scrollHeight + 'px';
+        this.classList.add('is-open');
+        body.style.maxHeight = body.scrollHeight + 'px';
       }
     });
   });
+}
 
-  // Auto‑open first accordion if desired
-  window.addEventListener('DOMContentLoaded', () => {
-    const first = document.querySelector('.accordions.is-first-expanded .accordion-head');
-    if (first) first.click();
+// Initialize accordion when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Ensure all accordion bodies start closed
+  document.querySelectorAll('.accordion-body').forEach(body => {
+    body.style.maxHeight = '0px';
   });
+  
+  initAccordion();
+  
+  // Auto-open first accordion if desired
+  const first = document.querySelector('.accordions.is-first-expanded .accordion-head');
+  if (first) {
+    setTimeout(() => {
+      first.click();
+    }, 100);
+  }
+});
+
+// Also initialize on window load to ensure all elements are ready
+window.addEventListener('load', function() {
+  // Ensure all accordion bodies start closed
+  document.querySelectorAll('.accordion-body').forEach(body => {
+    body.style.maxHeight = '0px';
+  });
+  
+  initAccordion();
+});
 
 var config = {
   apiKey: "AIzaSyCkVGkoxg8V3ei26qii7Y5iphRKXY0imXA",

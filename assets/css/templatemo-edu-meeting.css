@@ -82,11 +82,13 @@ header, nav, section, article, aside, footer, hgroup {
 html, body {
   font-family: 'Poppins', sans-serif;
   font-weight: 400;
-  background-color: #fff;
+  background-color: #1f272b;
   font-size: 16px;
   -ms-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
 }
 
 a {
@@ -125,7 +127,7 @@ global styles
 */
 html,
 body {
-  background: #fff;
+  background: #1f272b;
   font-family: 'Poppins', sans-serif;
 }
 
@@ -765,6 +767,50 @@ banner
 
 }
 
+@media (max-width: 992px) {
+  .main-banner .caption {
+    text-align: center;
+  }
+  
+  .main-banner .caption h2 {
+    font-size: 36px;
+    line-height: 54px;
+  }
+  
+  .main-banner .caption .main-button-red {
+    margin-top: 30px;
+  }
+  
+  .services {
+    margin-top: -100px;
+  }
+  
+  section.upcoming-meetings {
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+  
+  section.upcoming-meetings .categories {
+    margin-bottom: 30px;
+  }
+  
+  .accordions {
+    margin-left: 0;
+  }
+  
+  .new-students {
+    margin-top: 30px;
+  }
+  
+  section.our-facts .video {
+    margin-top: 30px;
+  }
+  
+  section.contact-us #contact {
+    margin-top: 30px;
+  }
+}
+
 
 /*
 ---------------------------------------------
@@ -773,9 +819,10 @@ services
 */
 
 .services {
-  margin-top: -135px;
-  position: absolute;
+  margin-top: -80px;
+  position: relative;
   width: 100%;
+  z-index: 10;
 }
 
 .services .item {
@@ -916,12 +963,28 @@ section.upcoming-meetings {
   background-attachment: fixed;
   background-repeat: no-repeat;
   background-size: cover;
-  padding-top: 230px;
-  padding-bottom: 110px;
+  padding-top: 100px;
+  padding-bottom: 100px;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 section.upcoming-meetings .section-heading {
   text-align: center;
+  margin-bottom: 60px;
+  margin-top: 10px;
+  position: relative;
+  z-index: 15;
+}
+
+section.upcoming-meetings .section-heading h2 {
+  margin-bottom: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
 }
 
 section.upcoming-meetings .categories {
@@ -966,6 +1029,20 @@ section.upcoming-meetings .categories .main-button-red a {
 section.upcoming-meetings .row {
   display: flex;
   flex-wrap: wrap;
+}
+
+/* Ensure proper spacing for the first upcoming-meetings section */
+section.upcoming-meetings:first-of-type {
+  margin-top: 0;
+  padding-top: 150px;
+  position: relative;
+  z-index: 5;
+}
+
+/* Ensure sections flow seamlessly without white borders */
+section.upcoming-meetings + section.upcoming-meetings {
+  margin-top: 0;
+  padding-top: 100px;
 }
 
 /* Team section specific styling */
@@ -1017,6 +1094,7 @@ section.upcoming-meetings .col-lg-6 .meeting-item {
   position: absolute;
   left: 20px;
   top: 20px;
+  z-index: 10;
 }
 
 .meeting-item .thumb .price span {
@@ -1123,6 +1201,57 @@ section.upcoming-meetings .col-lg-6 .meeting-item {
   text-decoration: underline;
 }
 
+/* Gallery specific styles for proper image/video alignment */
+section.meetings-page .meeting-item .thumb {
+  height: 250px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-top-right-radius: 20px;
+  border-top-left-radius: 20px;
+  margin: 0;
+  padding: 0;
+  background: #1f272b;
+}
+
+section.meetings-page .meeting-item .thumb img,
+section.meetings-page .meeting-item .thumb video {
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 2.5px solid rgba(255,255,255,0.85);
+  border-radius: 14px;
+  background: #1f272b;
+  box-sizing: border-box;
+}
+
+/* Ensure consistent card heights in gallery */
+section.meetings-page .meeting-item {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+section.meetings-page .meeting-item .down-content {
+  background: #1f272b;
+  padding: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 40px;
+  gap: 10px;
+}
+
 /* Responsive adjustments for card alignment */
 @media (max-width: 991px) {
   section.upcoming-meetings .row {
@@ -1149,6 +1278,17 @@ section.upcoming-meetings .col-lg-6 .meeting-item {
   .services .item .icon img {
     width: 50px;
     height: 50px;
+  }
+  
+  section.meetings-page .meeting-item .thumb {
+    height: 180px;
+  }
+  
+  section.meetings-page .meeting-item .thumb img,
+  section.meetings-page .meeting-item .thumb video {
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+    border-radius: 10px;
   }
 }
 
@@ -1191,6 +1331,22 @@ section.upcoming-meetings .col-lg-6 .meeting-item {
   
   .services .item p {
     font-size: 14px;
+  }
+  
+  section.meetings-page .meeting-item .thumb {
+    height: 120px;
+  }
+  
+  section.meetings-page .meeting-item .thumb img,
+  section.meetings-page .meeting-item .thumb video {
+    width: calc(100% - 6px);
+    height: calc(100% - 6px);
+    border-radius: 7px;
+  }
+  
+  section.meetings-page .meeting-item .down-content {
+    padding: 0;
+    min-height: 20px;
   }
   
   .services .item .icon img {
@@ -1281,9 +1437,10 @@ section.apply-now .item p {
 
 .accordion-body {
   overflow: hidden;
-  height: 0;
-  transition: height 300ms ease-in-out;
+  max-height: 0;
+  transition: max-height 300ms ease-in-out;
   background-color: #fff;
+  border-bottom: 1px solid #eee;
 }
 
 .accordion-body > .content {
@@ -1291,6 +1448,7 @@ section.apply-now .item p {
   padding-top: 0;
   color: #333;
   line-height: 1.5;
+  margin: 0;
 }
 
 
