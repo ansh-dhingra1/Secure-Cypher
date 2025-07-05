@@ -787,11 +787,23 @@ services
   text-align: center;
   color: #fff;
   padding: 40px;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .services .item .icon {
   max-width: 60px;
   margin: 0 auto;
+  flex-shrink: 0;
+}
+
+.services .item .icon img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
 }
 
 .services .item h4 {
@@ -799,11 +811,17 @@ services
   margin-bottom: 15px;
   font-size: 18px;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .services .item p {
   color: #fff;
   font-size: 13px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.5;
 }
 
 .services .owl-nav {
@@ -903,27 +921,25 @@ section.upcoming-meetings .section-heading {
 
 section.upcoming-meetings .categories {
   background-color: #fff;
-  border-radius: 20px;
   padding: 40px;
-  margin-right: 45px;
+  border-radius: 20px;
+  margin-bottom: 30px;
 }
 
 section.upcoming-meetings .categories h4 {
   font-size: 18px;
-  font-weight: 600;
   color: #1f272b;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-transform: uppercase;
 }
 
 section.upcoming-meetings .categories ul li {
-  display: inline-block;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 section.upcoming-meetings .categories ul li a {
-  font-size: 15px;
+  font-size: 14px;
   color: #1f272b;
   font-weight: 500;
   transition: all .3s;
@@ -934,27 +950,46 @@ section.upcoming-meetings .categories ul li a:hover {
 }
 
 section.upcoming-meetings .categories .main-button-red {
-  border-top: 1px solid #eee;
-  padding-top: 30px;
-  margin-top: 15px;
+  margin-top: 30px;
 }
 
 section.upcoming-meetings .categories .main-button-red a {
+  background-color: #a12c2f;
+}
+
+/* Add flexbox alignment for card rows */
+section.upcoming-meetings .row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+section.upcoming-meetings .col-lg-6 {
+  display: flex;
+  margin-bottom: 30px;
+}
+
+section.upcoming-meetings .col-lg-6 .meeting-item {
   width: 100%;
-  text-align: center;
 }
 
 .meeting-item {
   margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .meeting-item .thumb {
   position: relative;
+  flex-shrink: 0;
 }
 
 .meeting-item .thumb img {
   border-top-right-radius: 20px;
   border-top-left-radius: 20px;
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
 }
 
 .meeting-item .thumb .price {
@@ -977,6 +1012,11 @@ section.upcoming-meetings .categories .main-button-red a {
   padding: 30px;
   border-bottom-right-radius: 20px;
   border-bottom-left-radius: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 200px;
 }
 
 .meeting-item .down-content .date {
@@ -1012,8 +1052,84 @@ section.upcoming-meetings .categories .main-button-red a {
   margin-left: 50px;
   color: #1f272b;
   font-size: 14px;
+  flex: 1;
 }
 
+/* Team role styling for consistent alignment */
+.meeting-item .down-content .team-role {
+  margin-top: 10px;
+  margin-bottom: 0;
+  font-size: 16px;
+  color: #a12c2f;
+}
+
+/* Responsive adjustments for card alignment */
+@media (max-width: 991px) {
+  section.upcoming-meetings .row {
+    display: block;
+  }
+  
+  section.upcoming-meetings .col-lg-6 {
+    display: block;
+  }
+  
+  .meeting-item .thumb img {
+    height: 180px;
+  }
+  
+  .meeting-item .down-content {
+    min-height: 180px;
+  }
+  
+  .services .item {
+    height: 280px;
+    padding: 30px;
+  }
+  
+  .services .item .icon img {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 767px) {
+  .meeting-item .thumb img {
+    height: 160px;
+  }
+  
+  .meeting-item .down-content {
+    min-height: 160px;
+    padding: 20px;
+  }
+  
+  .meeting-item .down-content h4 {
+    font-size: 16px;
+  }
+  
+  .meeting-item .down-content .team-role {
+    font-size: 14px;
+  }
+  
+  .services .item {
+    height: 250px;
+    padding: 25px;
+  }
+  
+  .services .item h4 {
+    font-size: 16px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+  
+  .services .item p {
+    font-size: 12px;
+  }
+  
+  .services .item .icon img {
+    width: 45px;
+    height: 45px;
+  }
+}
 
 
 /*
