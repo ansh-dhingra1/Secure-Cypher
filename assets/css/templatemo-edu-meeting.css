@@ -809,19 +809,24 @@ services
 .services .item h4 {
   margin-top: 25px;
   margin-bottom: 15px;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .services .item p {
   color: #fff;
-  font-size: 13px;
+  font-size: 15px;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1.5;
+  line-height: 1.6;
+  margin-left: 0;
+  text-align: center;
+  font-weight: 400;
 }
 
 .services .owl-nav {
@@ -1041,26 +1046,50 @@ section.upcoming-meetings .col-lg-6 .meeting-item {
 }
 
 .meeting-item .down-content h4 {
-  font-size: 18px;
+  font-size: 20px;
   color: #1f272b;
-  font-weight: 600;
+  font-weight: 700;
   display: inline-block;
   margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .meeting-item .down-content p {
-  margin-left: 50px;
+  margin-left: 0;
   color: #1f272b;
-  font-size: 14px;
+  font-size: 15px;
   flex: 1;
+  text-align: left;
+  line-height: 1.6;
+  font-weight: 400;
 }
 
 /* Team role styling for consistent alignment */
 .meeting-item .down-content .team-role {
   margin-top: 10px;
   margin-bottom: 0;
-  font-size: 16px;
+  font-size: 18px;
   color: #a12c2f;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Team skills list styling */
+.meeting-item .down-content .team-skills {
+  margin-top: 15px;
+  margin-bottom: 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.meeting-item .down-content .team-skills li {
+  color: #1f272b;
+  font-size: 15px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+  font-weight: 400;
 }
 
 /* Responsive adjustments for card alignment */
@@ -1103,10 +1132,18 @@ section.upcoming-meetings .col-lg-6 .meeting-item {
   }
   
   .meeting-item .down-content h4 {
-    font-size: 16px;
+    font-size: 18px;
   }
   
   .meeting-item .down-content .team-role {
+    font-size: 16px;
+  }
+  
+  .meeting-item .down-content .team-skills {
+    padding-left: 15px;
+  }
+  
+  .meeting-item .down-content .team-skills li {
     font-size: 14px;
   }
   
@@ -1116,13 +1153,13 @@ section.upcoming-meetings .col-lg-6 .meeting-item {
   }
   
   .services .item h4 {
-    font-size: 16px;
+    font-size: 20px;
     margin-top: 20px;
     margin-bottom: 10px;
   }
   
   .services .item p {
-    font-size: 12px;
+    font-size: 14px;
   }
   
   .services .item .icon img {
