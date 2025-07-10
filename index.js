@@ -16,52 +16,6 @@ if (typeof fontkit === 'undefined') {
     alert('Font library not loaded. Please refresh the page and try again.');
 }
 
-// Wait for PDFLib to be fully loaded
-const waitForPDFLib = () => {
-    return new Promise((resolve, reject) => {
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds max wait
-        
-        const checkPDFLib = () => {
-            attempts++;
-            
-            if (typeof PDFLib !== 'undefined' && PDFLib.PDFDocument) {
-                console.log('PDFLib loaded successfully after', attempts, 'attempts');
-                resolve(PDFLib);
-            } else if (attempts >= maxAttempts) {
-                reject(new Error('PDFLib failed to load after maximum attempts'));
-            } else {
-                setTimeout(checkPDFLib, 100);
-            }
-        };
-        
-        checkPDFLib();
-    });
-};
-
-// Wait for fontkit to be fully loaded
-const waitForFontkit = () => {
-    return new Promise((resolve, reject) => {
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds max wait
-        
-        const checkFontkit = () => {
-            attempts++;
-            
-            if (typeof fontkit !== 'undefined') {
-                console.log('Fontkit loaded successfully after', attempts, 'attempts');
-                resolve(fontkit);
-            } else if (attempts >= maxAttempts) {
-                reject(new Error('Fontkit failed to load after maximum attempts'));
-            } else {
-                setTimeout(checkFontkit, 100);
-            }
-        };
-        
-        checkFontkit();
-    });
-};
-
 // Initialize PDFLib and fontkit
 let PDFDocument, rgb, degrees, fontkitInstance;
 
