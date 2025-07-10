@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
    <head>
@@ -40,50 +38,26 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.8/typed.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.8/typed.min.js.map"></script>
       <script src="https://unpkg.com/typed.js@2.0.8/lib/typed.js"></script>
-      <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
-      <script src="https://unpkg.com/@pdf-lib/fontkit@0.0.4"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
       
-      <!-- Fallback CDN sources for PDFLib -->
+      <!-- PDFLib and Fontkit (single reliable CDN, loaded with defer) -->
+      <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" defer></script>
+      <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js" defer></script>
+      <!-- FileSaver.js -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" defer></script>
+      
       <script>
-        // Check if PDFLib loaded successfully, if not try alternative CDN
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                if (typeof PDFLib === 'undefined') {
-                    console.warn('PDFLib not loaded from primary CDN, trying alternative...');
-                    
-                    const fallbackScript = document.createElement('script');
-                    fallbackScript.src = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
-                    fallbackScript.onload = function() {
-                        console.log('PDFLib loaded from fallback CDN');
-                        if (window.initializeLibraries) {
-                            window.initializeLibraries();
-                        }
-                    };
-                    fallbackScript.onerror = function() {
-                        console.error('Failed to load PDFLib from fallback CDN');
-                    };
-                    document.head.appendChild(fallbackScript);
-                }
-                
-                if (typeof fontkit === 'undefined') {
-                    console.warn('Fontkit not loaded from primary CDN, trying alternative...');
-                    
-                    const fallbackFontkitScript = document.createElement('script');
-                    fallbackFontkitScript.src = 'https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.min.js';
-                    fallbackFontkitScript.onload = function() {
-                        console.log('Fontkit loaded from fallback CDN');
-                        if (window.initializeLibraries) {
-                            window.initializeLibraries();
-                        }
-                    };
-                    fallbackFontkitScript.onerror = function() {
-                        console.error('Failed to load Fontkit from fallback CDN');
-                    };
-                    document.head.appendChild(fallbackFontkitScript);
-                }
-            }, 3000); // Wait 3 seconds before trying fallback
-        });
+        // Wait for PDFLib and fontkit to be available before using
+        function waitForPDFLibAndFontkit(callback, retries = 10) {
+          if (window.PDFLib && window.fontkit) {
+            callback();
+          } else if (retries > 0) {
+            setTimeout(() => waitForPDFLibAndFontkit(callback, retries - 1), 500);
+          } else {
+            alert('PDF library failed to load. Please check your internet connection or try again later.');
+          }
+        }
+        // Example usage:
+        // waitForPDFLibAndFontkit(() => { /* your PDF code here */ });
       </script>
       
       <!-- Retry mechanism for PDF libraries -->
