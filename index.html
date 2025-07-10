@@ -1352,7 +1352,7 @@ const updateCertificateButtonState = (isEnabled) => {
 window.enableCerts = () => {
     if (certificateSystemRef) {
         certificateSystemRef.set(true).then(() => {
-            alert('Certificate system ENABLED GLOBALLY! All users can now generate certificates.');
+            alert('Certificate system ENABLED. All users can now access the certificate page.');
             console.log('✅ Certificate system ENABLED GLOBALLY');
         }).catch((error) => {
             console.error('Error enabling certificate system:', error);
