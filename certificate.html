@@ -15,17 +15,33 @@
       
       <!-- Certificate Access Control -->
       <script>
-         // Check if certificate system is enabled
-         const CERTIFICATE_SYSTEM_KEY = 'scs_certificate_enabled';
-         const isCertificateSystemEnabled = () => {
-            return localStorage.getItem(CERTIFICATE_SYSTEM_KEY) === 'true';
-         };
+         // Global Certificate Access Control using Firebase
+         const CERTIFICATE_SYSTEM_REF = 'certificateSystemEnabled';
          
-         // Redirect if not enabled
-         if (!isCertificateSystemEnabled()) {
-            alert('Certificate generation is currently not available. Redirecting to home page.');
-            window.location.href = 'index.html';
-         }
+         // Wait for Firebase to initialize, then check access
+         setTimeout(() => {
+            if (typeof firebase !== 'undefined' && firebase.database) {
+               const certificateSystemRef = firebase.database().ref(CERTIFICATE_SYSTEM_REF);
+               
+               certificateSystemRef.once('value').then((snapshot) => {
+                  const isEnabled = snapshot.val() === true;
+                  
+                  if (!isEnabled) {
+                     alert('Certificate generation is currently not available. Redirecting to home page.');
+                     window.location.href = 'index.html';
+                  } else {
+                     console.log('✅ Certificate access granted');
+                  }
+               }).catch((error) => {
+                  console.error('Error checking certificate system status:', error);
+                  // If there's an error, allow access but log it
+                  console.warn('⚠️ Could not verify certificate system status, allowing access');
+               });
+            } else {
+               console.warn('⚠️ Firebase not available for access control');
+               // If Firebase is not available, allow access but log it
+            }
+         }, 1000); // Give Firebase time to initialize
       </script>
 
       <!-- bootstrap css -->
@@ -340,6 +356,26 @@
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
          }
          
+         /* Form field formatting feedback */
+         .contactus, .textarea {
+            transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
+         }
+         
+         .contactus.formatted, .textarea.formatted {
+            border-color: #28a745 !important;
+            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25) !important;
+            animation: formatFlash 0.6s ease-out;
+         }
+         
+         @keyframes formatFlash {
+            0% { 
+               background-color: rgba(40, 167, 69, 0.1);
+            }
+            100% { 
+               background-color: transparent;
+            }
+         }
+         
          .send:before {
             content: '';
             position: absolute;
@@ -611,22 +647,22 @@
                <div class="row">
                   <div class="col-sm-12">
                      <div class="form-group">
-                        <input class="contactus" id="name" placeholder="Name" type="text" name="Name" required>
+                        <input class="contactus" id="name" placeholder="Full Name" type="text" name="Name" required>
                      </div>
                   </div>
                   <div class="col-sm-12">
                      <div class="form-group">
-                        <input class="contactus" id="email" placeholder="Email" type="email" name="Email" required>
+                        <input class="contactus" id="email" placeholder="Email Address" type="email" name="Email" required>
                      </div>
                   </div>
                   <div class="col-sm-12">
                      <div class="form-group">
-                        <input class="contactus" id="phone" placeholder="Phone" type="tel" name="Phone" required>
+                        <input class="contactus" id="phone" placeholder="Phone Number (10 digits)" type="tel" name="Phone" required maxlength="10">
                      </div>
                   </div>
                   <div class="col-sm-12">
                      <div class="form-group">
-                        <textarea class="textarea" id="college" placeholder="College Name" name="Message" required></textarea>
+                        <textarea class="textarea" id="college" placeholder="College/University Name" name="Message" required></textarea>
                      </div>
                   </div>
                   <div class="col-sm-12">

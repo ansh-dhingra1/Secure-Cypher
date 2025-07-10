@@ -114,7 +114,7 @@ const verifyCertificate = (code) => {
     });
 };
 
-// Form validation functions
+// Form validation functions with text formatting
 const validateName = (name) => {
     return name.trim().length >= 3 && name.trim().length <= 64;
 };
@@ -132,6 +132,35 @@ const validatePhone = (phone) => {
 const validateCollege = (college) => {
     const trimmed = college.trim();
     return trimmed.length >= 3 && /[a-zA-Z]/.test(trimmed) && !/^\d+$/.test(trimmed);
+};
+
+// Text formatting functions
+const capitalizeName = (name) => {
+    return name.trim()
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
+
+const formatPhone = (phone) => {
+    // Remove all non-digits and limit to 10 digits
+    const cleaned = phone.replace(/\D/g, '').slice(0, 10);
+    return cleaned;
+};
+
+const formatEmail = (email) => {
+    return email.trim().toLowerCase();
+};
+
+const formatCollege = (college) => {
+    // Capitalize first letter of each word like a proper name
+    return college.trim()
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
 };
 
 const checkFormValidity = () => {
@@ -203,6 +232,67 @@ document.addEventListener('DOMContentLoaded', function() {
             input.addEventListener('blur', checkFormValidity);
         });
         
+        // Add text formatting listeners
+        userName.addEventListener('input', function() {
+            // Only format if the user isn't currently typing (avoid interfering with spaces)
+            // We'll apply formatting on blur instead for names to avoid cursor issues
+            checkFormValidity(); // Still check validity on input
+        });
+        
+        // Apply name formatting when user finishes typing (blur event)
+        userName.addEventListener('blur', function() {
+            const originalValue = this.value;
+            const formatted = capitalizeName(this.value);
+            if (originalValue !== formatted) {
+                this.value = formatted;
+                // Add visual feedback
+                this.classList.add('formatted');
+                setTimeout(() => {
+                    this.classList.remove('formatted');
+                }, 600);
+            }
+        });
+        
+        emailInput.addEventListener('blur', function() {
+            const originalValue = this.value;
+            const formatted = formatEmail(this.value);
+            if (originalValue !== formatted) {
+                this.value = formatted;
+                // Add visual feedback
+                this.classList.add('formatted');
+                setTimeout(() => {
+                    this.classList.remove('formatted');
+                }, 600);
+            }
+        });
+        
+        phoneInput.addEventListener('input', function() {
+            const cursorPos = this.selectionStart;
+            const originalValue = this.value;
+            const formatted = formatPhone(this.value);
+            
+            if (originalValue !== formatted) {
+                this.value = formatted;
+                // Adjust cursor position for removed characters
+                const removedChars = originalValue.length - formatted.length;
+                const newPos = Math.max(0, cursorPos - removedChars);
+                this.setSelectionRange(newPos, newPos);
+            }
+        });
+        
+        collegeInput.addEventListener('blur', function() {
+            const originalValue = this.value;
+            const formatted = formatCollege(this.value);
+            if (originalValue !== formatted) {
+                this.value = formatted;
+                // Add visual feedback
+                this.classList.add('formatted');
+                setTimeout(() => {
+                    this.classList.remove('formatted');
+                }, 600);
+            }
+        });
+        
         // Initial form validity check
         checkFormValidity();
         
@@ -224,15 +314,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            const val = userName.value;
-            const email = document.getElementById("email").value;
-            const phone = document.getElementById("phone").value;
-            const college = document.getElementById("college").value;
+            // Get and format values properly
+            const rawName = userName.value;
+            const rawEmail = emailInput.value;
+            const rawPhone = phoneInput.value;
+            const rawCollege = collegeInput.value;
             
-            console.log('Form values:', { name: val, email, phone, college });
+            // Apply final formatting before submission
+            const formattedName = capitalizeName(rawName);
+            const formattedEmail = formatEmail(rawEmail);
+            const formattedPhone = formatPhone(rawPhone);
+            const formattedCollege = formatCollege(rawCollege);
             
-            // Basic checks - just make sure fields aren't completely empty
-            if (!val.trim() || !email.trim() || !phone.trim() || !college.trim()) {
+            console.log('Form values (formatted):', { 
+                name: formattedName, 
+                email: formattedEmail, 
+                phone: formattedPhone, 
+                college: formattedCollege 
+            });
+            
+            // Basic checks - just make sure fields aren't completely empty after formatting
+            if (!formattedName.trim() || !formattedEmail.trim() || !formattedPhone.trim() || !formattedCollege.trim()) {
                 alert('Please fill in all fields before generating your certificate.');
                 return;
             }
@@ -246,13 +348,13 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.classList.add('loading');
             
             try {
-                // Save to Firebase first
+                // Save to Firebase first with formatted values
                 if (typeof sendMessage === 'function') {
-                    sendMessage(val, email, phone, college);
+                    sendMessage(formattedName, formattedEmail, formattedPhone, formattedCollege);
                 }
                 
-                // Generate PDF certificate
-                await generatePDF(val, email, phone, college);
+                // Generate PDF certificate with formatted values
+                await generatePDF(formattedName, formattedEmail, formattedPhone, formattedCollege);
                 
                 // Show success alert
                 const alertElement = document.querySelector('.alert');

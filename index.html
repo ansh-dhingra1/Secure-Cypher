@@ -1277,17 +1277,32 @@ This is for courses
 
   <script>
 
-// Certificate System Control
-const CERTIFICATE_SYSTEM_KEY = 'scs_certificate_enabled';
+// Global Certificate System Control using Firebase
+const CERTIFICATE_SYSTEM_REF = 'certificateSystemEnabled';
 
-const isCertificateSystemEnabled = () => {
-    return localStorage.getItem(CERTIFICATE_SYSTEM_KEY) === 'true';
+let certificateSystemRef;
+
+const initializeCertificateSystem = () => {
+    if (typeof firebase !== 'undefined' && firebase.database) {
+        certificateSystemRef = firebase.database().ref(CERTIFICATE_SYSTEM_REF);
+        
+        // Listen for changes to certificate system status
+        certificateSystemRef.on('value', (snapshot) => {
+            const isEnabled = snapshot.val() === true;
+            updateCertificateButtonState(isEnabled);
+            console.log('Certificate system status updated:', isEnabled ? 'ENABLED' : 'DISABLED');
+        });
+        
+        console.log('✅ Global certificate system initialized');
+    } else {
+        console.warn('⚠️ Firebase not available for certificate system');
+    }
 };
 
-const updateCertificateButtonState = () => {
+const updateCertificateButtonState = (isEnabled) => {
     const certificateBtn = document.getElementById('certificateBtn');
     if (certificateBtn) {
-        if (isCertificateSystemEnabled()) {
+        if (isEnabled) {
             // Enable the button
             certificateBtn.classList.remove('disabled');
             certificateBtn.style.pointerEvents = 'auto';
@@ -1333,26 +1348,64 @@ const updateCertificateButtonState = () => {
     }
 };
 
-// Admin functions (accessible via browser console)
+// Admin functions (accessible via browser console) - Now global via Firebase
 window.enableCerts = () => {
-    localStorage.setItem(CERTIFICATE_SYSTEM_KEY, 'true');
-    updateCertificateButtonState();
-    alert('Certificate system ENABLED! Users can now generate certificates.');
-    console.log('✅ Certificate system ENABLED');
+    if (certificateSystemRef) {
+        certificateSystemRef.set(true).then(() => {
+            alert('Certificate system ENABLED GLOBALLY! All users can now generate certificates.');
+            console.log('✅ Certificate system ENABLED GLOBALLY');
+        }).catch((error) => {
+            console.error('Error enabling certificate system:', error);
+            alert('Error enabling certificate system. Please try again.');
+        });
+    } else {
+        alert('Firebase not initialized. Please refresh and try again.');
+    }
 };
 
 window.disableCerts = () => {
-    localStorage.setItem(CERTIFICATE_SYSTEM_KEY, 'false');
-    updateCertificateButtonState();
-    alert('Certificate system DISABLED! Certificate page is now inaccessible.');
-    console.log('❌ Certificate system DISABLED');
+    if (certificateSystemRef) {
+        certificateSystemRef.set(false).then(() => {
+            alert('Certificate system DISABLED GLOBALLY! Certificate page is now inaccessible for all users.');
+            console.log('❌ Certificate system DISABLED GLOBALLY');
+        }).catch((error) => {
+            console.error('Error disabling certificate system:', error);
+            alert('Error disabling certificate system. Please try again.');
+        });
+    } else {
+        alert('Firebase not initialized. Please refresh and try again.');
+    }
 };
 
 window.toggleCerts = () => {
-    if (isCertificateSystemEnabled()) {
-        window.disableCerts();
+    if (certificateSystemRef) {
+        certificateSystemRef.once('value').then((snapshot) => {
+            const currentState = snapshot.val() === true;
+            if (currentState) {
+                window.disableCerts();
+            } else {
+                window.enableCerts();
+            }
+        });
     } else {
-        window.enableCerts();
+        alert('Firebase not initialized. Please refresh and try again.');
+    }
+};
+
+// Debug function to check current certificate system status
+window.checkCertStatus = () => {
+    if (certificateSystemRef) {
+        certificateSystemRef.once('value').then((snapshot) => {
+            const isEnabled = snapshot.val() === true;
+            const status = isEnabled ? 'ENABLED' : 'DISABLED';
+            alert(`Global Certificate System Status: ${status}`);
+            console.log(`📊 Global Certificate System Status: ${status}`);
+        }).catch((error) => {
+            console.error('Error checking status:', error);
+            alert('Error checking certificate system status');
+        });
+    } else {
+        alert('Firebase not initialized. Please refresh and try again.');
     }
 };
 
@@ -1372,9 +1425,10 @@ function updateCurrentDate() {
 document.addEventListener('DOMContentLoaded', function() {
   updateCurrentDate();
   
-  // Initialize certificate system state
-  updateCertificateButtonState();
-  console.log('Certificate system status:', isCertificateSystemEnabled() ? 'ENABLED' : 'DISABLED');
+  // Initialize Firebase first, then certificate system
+  setTimeout(() => {
+    initializeCertificateSystem();
+  }, 500); // Give Firebase time to initialize
   
   // Mobile menu functionality
   const menuTrigger = document.querySelector('.menu-trigger');
