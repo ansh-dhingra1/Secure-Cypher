@@ -8,9 +8,6 @@ const submitBtn = document.getElementById("submitBtn");
 console.log('PDFLib available:', typeof PDFLib !== 'undefined');
 console.log('fontkit available:', typeof fontkit !== 'undefined');
 
-// Direct access to PDFLib components
-const { PDFDocument, rgb, degrees } = PDFLib || {};
-
 // Firebase Database Reference for Certificates
 let certificateRef = firebase.database().ref('Certificates');
 
@@ -574,7 +571,7 @@ const generatePDF = async (name, email, phone, college) => {
         console.log('Parameters:', { name, email, phone, college });
         
         // Check if libraries are available
-        if (!PDFDocument || !rgb || !degrees) {
+        if (!PDFLib || !PDFLib.PDFDocument || !PDFLib.rgb) {
             throw new Error('PDFLib is not properly loaded. Please refresh the page and try again.');
         }
         
@@ -583,9 +580,8 @@ const generatePDF = async (name, email, phone, college) => {
         }
         
         console.log('Libraries loaded successfully');
-        console.log('PDFDocument available:', typeof PDFDocument);
-        console.log('rgb available:', typeof rgb);
-        console.log('degrees available:', typeof degrees);
+        console.log('PDFDocument available:', typeof PDFLib.PDFDocument);
+        console.log('rgb available:', typeof PDFLib.rgb);
         console.log('fontkit available:', typeof fontkit);
         
         // Generate unique certificate code first
@@ -621,11 +617,11 @@ const generatePDF = async (name, email, phone, college) => {
         if (useFallback) {
             console.log('Creating fallback PDF...');
             // Create a new PDF if template is not found
-            if (!PDFDocument || typeof PDFDocument.create !== 'function') {
+            if (!PDFLib.PDFDocument || typeof PDFLib.PDFDocument.create !== 'function') {
                 throw new Error('PDFDocument.create is not available. PDFLib may not be properly loaded.');
             }
             
-            pdfDoc = PDFDocument.create();
+            pdfDoc = await PDFLib.PDFDocument.create();
             console.log('PDF document created successfully');
             
             if (!pdfDoc.addPage || typeof pdfDoc.addPage !== 'function') {
@@ -640,14 +636,14 @@ const generatePDF = async (name, email, phone, college) => {
                 x: 150,
                 y: 700,
                 size: 24,
-                color: rgb(0, 0, 0),
+                color: PDFLib.rgb(0, 0, 0),
             });
             
             page.drawText('This is to certify that', {
                 x: 200,
                 y: 650,
                 size: 16,
-                color: rgb(0, 0, 0),
+                color: PDFLib.rgb(0, 0, 0),
             });
             
             // Add name
@@ -655,7 +651,7 @@ const generatePDF = async (name, email, phone, college) => {
                 x: 200,
                 y: 600,
                 size: 20,
-                color: rgb(0, 0, 0),
+                color: PDFLib.rgb(0, 0, 0),
             });
             
             // Add certificate code
@@ -663,18 +659,18 @@ const generatePDF = async (name, email, phone, college) => {
                 x: 200,
                 y: 100,
                 size: 12,
-                color: rgb(0.5, 0.5, 0.5),
+                color: PDFLib.rgb(0.5, 0.5, 0.5),
             });
             
             console.log('Fallback PDF created successfully');
         } else {
             console.log('Loading PDF document from template...');
             // Load a PDFDocument from the existing PDF bytes
-            if (!PDFDocument || typeof PDFDocument.load !== 'function') {
+            if (!PDFLib.PDFDocument || typeof PDFLib.PDFDocument.load !== 'function') {
                 throw new Error('PDFDocument.load is not available. PDFLib may not be properly loaded.');
             }
             
-            pdfDoc = await PDFDocument.load(existingPdfBytes);
+            pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
             console.log('PDF document loaded from template');
             
             console.log('Registering fontkit...');
@@ -710,7 +706,7 @@ const generatePDF = async (name, email, phone, college) => {
             } catch (fontError) {
                 console.warn('Font loading failed, using default font:', fontError);
                 // Use default font if custom font fails
-                SanChezFont = await pdfDoc.embedFont(await pdfDoc.getFont('Helvetica'));
+                SanChezFont = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
                 console.log('Using default Helvetica font');
             }
             
@@ -742,7 +738,7 @@ const generatePDF = async (name, email, phone, college) => {
               y: 270,
               size: fontSize,
               font: SanChezFont,
-              color: rgb(1.0, 0.84, 0.00),
+              color: PDFLib.rgb(1.0, 0.84, 0.00),
             });
             console.log('Name drawn on PDF');
 
@@ -756,7 +752,7 @@ const generatePDF = async (name, email, phone, college) => {
               y: 50, // Position at bottom of certificate
               size: codeFontSize,
               font: SanChezFont,
-              color: rgb(0.5, 0.5, 0.5), // Gray color for subtle appearance
+              color: PDFLib.rgb(0.5, 0.5, 0.5), // Gray color for subtle appearance
             });
             console.log('Certificate code drawn on PDF');
         }
