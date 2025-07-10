@@ -987,6 +987,8 @@ This is for courses
         margin-right: 15px !important;
         visibility: visible !important;
         opacity: 1 !important;
+        position: relative !important;
+        z-index: 1002 !important;
       }
       
       .logo img {
@@ -996,6 +998,8 @@ This is for courses
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
+        position: relative !important;
+        z-index: 1002 !important;
       }
       
       /* Navigation menu */
@@ -1099,6 +1103,7 @@ This is for courses
         align-items: center !important;
         justify-content: space-between !important;
         width: 100% !important;
+        padding: 0 15px !important;
       }
       
       .sub-header .left-content {
@@ -1106,7 +1111,9 @@ This is for courses
         margin-bottom: 0 !important;
         color: white !important;
         font-size: 14px !important;
-        flex: 1 !important;
+        flex: 0 1 auto !important;
+        margin-right: 15px !important;
+        min-width: 0 !important;
       }
       
       .sub-header .right-info {
@@ -1115,6 +1122,8 @@ This is for courses
         color: white !important;
         font-size: 14px !important;
         flex: 1 !important;
+        margin-left: auto !important;
+        min-width: 0 !important;
       }
       
       .sub-header .left-content em {
@@ -1165,6 +1174,31 @@ This is for courses
         color: white !important;
         font-weight: 500 !important;
         font-size: 14px !important;
+      }
+      
+      /* Force logo and date visibility */
+      .header-area .logo,
+      .header-area .logo img {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 1002 !important;
+      }
+      
+      .sub-header .left-content em,
+      .sub-header .left-content span,
+      .sub-header .left-content #currentDate {
+        display: inline !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        color: white !important;
+      }
+      
+      /* Ensure proper spacing */
+      .sub-header .left-content {
+        overflow: visible !important;
+        white-space: nowrap !important;
       }
     }
     

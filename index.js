@@ -3,7 +3,13 @@
 
 const userName = document.getElementById("name");
 const submitBtn = document.getElementById("submitBtn");
-const { PDFDocument, rgb, degrees } = PDFLib;
+
+// Check if PDFLib is available
+if (typeof PDFLib === 'undefined') {
+    console.error('PDFLib is not loaded. Please check the CDN link.');
+}
+
+const { PDFDocument, rgb, degrees } = PDFLib || {};
 
 // Firebase Database Reference for Certificates
 let certificateRef = firebase.database().ref('Certificates');
@@ -479,82 +485,171 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 const generatePDF = async (name, email, phone, college) => {
-    const existingPdfBytes = await fetch("Certificate_nagpur.pdf").then((res) =>
-      res.arrayBuffer()
-    );
+    try {
+        console.log('Starting PDF generation...');
+        
+        // Check if required libraries are loaded
+        if (typeof PDFDocument === 'undefined') {
+            throw new Error('PDFLib is not loaded');
+        }
+        
+        if (typeof fontkit === 'undefined') {
+            throw new Error('Fontkit is not loaded');
+        }
+        
+        console.log('Fetching PDF template...');
+        let existingPdfBytes;
+        try {
+            existingPdfBytes = await fetch("Certificate_nagpur.pdf").then((res) => {
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch PDF template: ${res.status} ${res.statusText}`);
+                }
+                return res.arrayBuffer();
+            });
+        } catch (error) {
+            console.warn('Could not fetch PDF template, creating new PDF...');
+            // Create a new PDF if template is not found
+            const pdfDoc = PDFDocument.create();
+            const page = pdfDoc.addPage([612, 792]); // Standard letter size
+            
+            // Add basic certificate content
+            page.drawText('Certificate of Appreciation', {
+                x: 150,
+                y: 700,
+                size: 24,
+                color: rgb(0, 0, 0),
+            });
+            
+            page.drawText('This is to certify that', {
+                x: 200,
+                y: 650,
+                size: 16,
+                color: rgb(0, 0, 0),
+            });
+            
+            // Continue with the rest of the function
+            const certificateCode = generateCertificateCode();
+            saveCertificate(certificateCode, name, email, phone, college);
+            
+            // Add name
+            page.drawText(name, {
+                x: 200,
+                y: 600,
+                size: 20,
+                color: rgb(0, 0, 0),
+            });
+            
+            // Add certificate code
+            page.drawText(certificateCode, {
+                x: 200,
+                y: 100,
+                size: 12,
+                color: rgb(0.5, 0.5, 0.5),
+            });
+            
+            const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
+            const link = document.createElement('a');
+            link.href = pdfDataUri;
+            link.download = "Certificate for Appreciation.pdf";
+            link.click();
+            link.remove();
+            
+            showCertificateCodeNotification(certificateCode);
+            console.log('PDF generation completed successfully!');
+            return;
+        }
 
-    // Load a PDFDocument from the existing PDF bytes
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-    pdfDoc.registerFontkit(fontkit);
+        console.log('Loading PDF document...');
+        // Load a PDFDocument from the existing PDF bytes
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        
+        console.log('Registering fontkit...');
+        pdfDoc.registerFontkit(fontkit);
 
-    
-  //get font
-  const fontBytes = await fetch("Paul-le1V.ttf").then((res) =>
-  res.arrayBuffer()
-);
-  // Embed our custom font in the document
-  const SanChezFont  = await pdfDoc.embedFont(fontBytes);
-   // Get the first page of the document
-   const pages = pdfDoc.getPages();
-   const firstPage = pages[0];
- 
-   // Generate unique certificate code
-   const certificateCode = generateCertificateCode();
-   
-   // Save certificate data
-   saveCertificate(certificateCode, name, email, phone, college);
- 
-   // Calculate text width to center it
-   const fontSize = 55;
-   const textWidth = SanChezFont.widthOfTextAtSize(name, fontSize);
-   
-   // Get page dimensions
-   const { width: pageWidth } = firstPage.getSize();
-   
-   // Calculate center position (page center - half of text width)
-   const centerX = (pageWidth - textWidth) / 2;
- 
-   // Draw a string of text centered on the first page
-   firstPage.drawText(name, {
-     x: centerX,
-     y: 270,
-     size: fontSize,
-     font: SanChezFont,
-     color: rgb(1.0, 0.84, 0.00),
-   });
+        console.log('Fetching font...');
+        //get font
+        const fontBytes = await fetch("Paul-le1V.ttf").then((res) => {
+            if (!res.ok) {
+                throw new Error(`Failed to fetch font: ${res.status} ${res.statusText}`);
+            }
+            return res.arrayBuffer();
+        });
+        
+        console.log('Embedding font...');
+        // Embed our custom font in the document
+        const SanChezFont = await pdfDoc.embedFont(fontBytes);
+        
+        // Get the first page of the document
+        const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
+     
+        // Generate unique certificate code
+        const certificateCode = generateCertificateCode();
+        
+        // Save certificate data
+        saveCertificate(certificateCode, name, email, phone, college);
+     
+        // Calculate text width to center it
+        const fontSize = 55;
+        const textWidth = SanChezFont.widthOfTextAtSize(name, fontSize);
+        
+        // Get page dimensions
+        const { width: pageWidth } = firstPage.getSize();
+        
+        // Calculate center position (page center - half of text width)
+        const centerX = (pageWidth - textWidth) / 2;
+     
+        // Draw a string of text centered on the first page
+        firstPage.drawText(name, {
+          x: centerX,
+          y: 270,
+          size: fontSize,
+          font: SanChezFont,
+          color: rgb(1.0, 0.84, 0.00),
+        });
 
-   // Add certificate code (smaller font, positioned at bottom)
-   const codeFontSize = 12;
-   const codeTextWidth = SanChezFont.widthOfTextAtSize(certificateCode, codeFontSize);
-   const codeCenterX = (pageWidth - codeTextWidth) / 2;
-   
-   firstPage.drawText(certificateCode, {
-     x: codeCenterX,
-     y: 50, // Position at bottom of certificate
-     size: codeFontSize,
-     font: SanChezFont,
-     color: rgb(0.5, 0.5, 0.5), // Gray color for subtle appearance
-   });
- 
-  // Serialize the PDFDocument to bytes (a Uint8Array)
-  const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
+        // Add certificate code (smaller font, positioned at bottom)
+        const codeFontSize = 12;
+        const codeTextWidth = SanChezFont.widthOfTextAtSize(certificateCode, codeFontSize);
+        const codeCenterX = (pageWidth - codeTextWidth) / 2;
+        
+        firstPage.drawText(certificateCode, {
+          x: codeCenterX,
+          y: 50, // Position at bottom of certificate
+          size: codeFontSize,
+          font: SanChezFont,
+          color: rgb(0.5, 0.5, 0.5), // Gray color for subtle appearance
+        });
+     
+        console.log('Serializing PDF...');
+        // Serialize the PDFDocument to bytes (a Uint8Array)
+        const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
 
-  // Create a temporary link to download the PDF
-  const link = document.createElement('a');
-  link.href = pdfDataUri;
-  link.download = "Certificate for Appreciation.pdf";
-  
-  // Add click event to copy certificate code when PDF is opened
-  link.addEventListener('click', () => {
-    // Show a notification about the certificate code
-    showCertificateCodeNotification(certificateCode);
-  });
-  
-  // Trigger download
-  link.click();
-  
-  // Clean up
-  link.remove();
+        console.log('Creating download link...');
+        // Create a temporary link to download the PDF
+        const link = document.createElement('a');
+        link.href = pdfDataUri;
+        link.download = "Certificate for Appreciation.pdf";
+        
+        // Add click event to copy certificate code when PDF is opened
+        link.addEventListener('click', () => {
+          // Show a notification about the certificate code
+          showCertificateCodeNotification(certificateCode);
+        });
+        
+        console.log('Triggering download...');
+        // Trigger download
+        link.click();
+        
+        // Clean up
+        link.remove();
+        
+        console.log('PDF generation completed successfully!');
+        
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Error generating certificate. Please try again. Error: ' + error.message);
+    }
 };
 
 // Function to show certificate code notification

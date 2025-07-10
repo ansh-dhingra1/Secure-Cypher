@@ -42,6 +42,7 @@
       <script src="https://unpkg.com/typed.js@2.0.8/lib/typed.js"></script>
       <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
       <script src="https://unpkg.com/@pdf-lib/fontkit@0.0.4"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
       
       <style>
          /* Modal styles */
@@ -574,22 +575,28 @@
     let email = document.querySelector('#email').value;
     let password = document.querySelector('#phone').value;
     let bio = document.querySelector('#college').value;
-    // let job = document.querySelector('#job').value;
-    // let interest = document.querySelector('#interest').value;
+    
+    // Check if all fields are valid before proceeding
+    if (name && email && password && bio) {
+      //send message values to Firebase
+      sendMessage(name, email, password, bio);
+      
+      // Generate PDF certificate
+      if (typeof generatePDF === 'function') {
+        generatePDF(name, email, password, bio);
+      }
   
-    //send message values
-    sendMessage(name, email, password, bio);
+      //Show Alert Message(5)
+      document.querySelector('.alert').style.display = 'block';
   
-    //Show Alert Message(5)
-    document.querySelector('.alert').style.display = 'block';
+      //Hide Alert Message After Seven Seconds(6)
+      setTimeout(function() {
+        document.querySelector('.alert').style.display = 'none';
+      }, 7000);
   
-    //Hide Alert Message After Seven Seconds(6)
-    setTimeout(function() {
-      document.querySelector('.alert').style.display = 'none';
-    }, 7000);
-  
-    //Form Reset After Submission(7)
-    document.getElementById('fo').reset();
+      //Form Reset After Submission(7)
+      document.getElementById('fo').reset();
+    }
   }
   
   //Send Message to Firebase(4)
