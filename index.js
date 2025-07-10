@@ -7,6 +7,13 @@ const submitBtn = document.getElementById("submitBtn");
 // Check if PDFLib is available
 if (typeof PDFLib === 'undefined') {
     console.error('PDFLib is not loaded. Please check the CDN link.');
+    alert('PDF library not loaded. Please refresh the page and try again.');
+}
+
+// Check if fontkit is available
+if (typeof fontkit === 'undefined') {
+    console.error('Fontkit is not loaded. Please check the CDN link.');
+    alert('Font library not loaded. Please refresh the page and try again.');
 }
 
 const { PDFDocument, rgb, degrees } = PDFLib || {};
@@ -323,10 +330,14 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 submitBtn.addEventListener("click", () => {
+    console.log('Submit button clicked');
+    
     const val = userName.value;
     const email = document.getElementById("email").value;
     const phone = document.getElementById("phone").value;
     const college = document.getElementById("college").value;
+    
+    console.log('Form values:', { name: val, email, phone, college });
     
     // Validate all fields before proceeding
     const isNameValid = validateName(val, true);
@@ -334,9 +345,18 @@ submitBtn.addEventListener("click", () => {
     const isPhoneValid = validatePhone(phone, true);
     const isCollegeValid = validateCollege(college, true);
     
+    console.log('Validation results:', { isNameValid, isEmailValid, isPhoneValid, isCollegeValid });
+    
     if (isNameValid && isEmailValid && isPhoneValid && isCollegeValid) {
-        generatePDF(val, email, phone, college);
+        console.log('All validations passed, calling generatePDF...');
+        try {
+            generatePDF(val, email, phone, college);
+        } catch (error) {
+            console.error('Error calling generatePDF:', error);
+            alert('Error starting certificate generation: ' + error.message);
+        }
     } else {
+        console.log('Validation failed, focusing on first invalid field');
         // Focus on the first invalid field
         if (!isNameValid) {
             document.getElementById("name").focus();
@@ -568,16 +588,25 @@ const generatePDF = async (name, email, phone, college) => {
 
         console.log('Fetching font...');
         //get font
-        const fontBytes = await fetch("Paul-le1V.ttf").then((res) => {
-            if (!res.ok) {
-                throw new Error(`Failed to fetch font: ${res.status} ${res.statusText}`);
-            }
-            return res.arrayBuffer();
-        });
+        let fontBytes;
+        let SanChezFont;
         
-        console.log('Embedding font...');
-        // Embed our custom font in the document
-        const SanChezFont = await pdfDoc.embedFont(fontBytes);
+        try {
+            fontBytes = await fetch("Paul-le1V.ttf").then((res) => {
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch font: ${res.status} ${res.statusText}`);
+                }
+                return res.arrayBuffer();
+            });
+            
+            console.log('Embedding font...');
+            // Embed our custom font in the document
+            SanChezFont = await pdfDoc.embedFont(fontBytes);
+        } catch (fontError) {
+            console.warn('Font loading failed, using default font:', fontError);
+            // Use default font if custom font fails
+            SanChezFont = await pdfDoc.embedFont(await pdfDoc.getFont('Helvetica'));
+        }
         
         // Get the first page of the document
         const pages = pdfDoc.getPages();
@@ -648,7 +677,27 @@ const generatePDF = async (name, email, phone, college) => {
         
     } catch (error) {
         console.error('Error generating PDF:', error);
-        alert('Error generating certificate. Please try again. Error: ' + error.message);
+        console.error('Error stack:', error.stack);
+        console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            fileName: error.fileName,
+            lineNumber: error.lineNumber
+        });
+        
+        // More specific error messages
+        let errorMessage = 'Error generating certificate. ';
+        if (error.message.includes('PDFLib')) {
+            errorMessage += 'PDF library not loaded properly. Please refresh the page and try again.';
+        } else if (error.message.includes('fetch')) {
+            errorMessage += 'Could not load certificate template. Please check your internet connection.';
+        } else if (error.message.includes('font')) {
+            errorMessage += 'Font loading failed. Using fallback font.';
+        } else {
+            errorMessage += 'Please try again. Error: ' + error.message;
+        }
+        
+        alert(errorMessage);
     }
 };
 
