@@ -948,9 +948,8 @@ const checkRequiredFiles = async () => {
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('=== Secure Cypher Certificate System Initialization ===');
     
-    // Initialize certificate button state
-    updateCertificateButtonState();
-    console.log('Certificate system status:', isCertificateSystemEnabled() ? 'ENABLED' : 'DISABLED');
+    // Initialize certificate button state - removed outdated reference
+    // Certificate system status will be logged by initializeCertificateSystem()
     
     // Simple library availability check
     console.log('PDFLib available:', typeof PDFLib !== 'undefined');

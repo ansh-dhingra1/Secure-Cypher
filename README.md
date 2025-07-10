@@ -6,35 +6,39 @@ Advanced online security solutions and cybersecurity training platform.
 
 ### Admin Control Functions
 
-The certificate generation system can be enabled/disabled dynamically. This is useful for controlling when users can generate certificates (e.g., only during/after seminars).
+The certificate generation system can be enabled/disabled dynamically using **Firebase Database**. This is useful for controlling when users can generate certificates (e.g., only during/after seminars).
 
 #### Quick Commands (Browser Console)
 
 Open browser console (`F12` → Console tab) and use these commands:
 
 ```javascript
-// Enable certificate system
+// Enable certificate system GLOBALLY for ALL users
 enableCerts()
 
-// Disable certificate system  
+// Disable certificate system GLOBALLY for ALL users
 disableCerts()
 
-// Toggle certificate system on/off
+// Toggle certificate system on/off GLOBALLY
 toggleCerts()
+
+// Check current global status
+checkCertStatus()
 ```
 
 ### How It Works
 
 - **Disabled State**: 
   - "Get Certificate" button appears grayed out with strikethrough
-  - Shows "(Disabled)" text next to button
   - Clicking shows "not available" message
   - Direct URL access to `/certificate.html` redirects to home page
+  - **Applied to ALL users instantly**
 
 - **Enabled State**:
   - "Get Certificate" button appears normal and clickable
   - Users can access certificate generation
   - Direct URL access works normally
+  - **Applied to ALL users instantly**
 
 ### Default State
 
@@ -44,15 +48,32 @@ toggleCerts()
 ### Typical Usage
 
 1. **Before seminar**: Keep disabled
-2. **During/after seminar**: Run `enableCerts()` in console
-3. **When done**: Run `disableCerts()` to restrict access again
+2. **During/after seminar**: Run `enableCerts()` in console → **ALL users can now get certificates**
+3. **When done**: Run `disableCerts()` → **ALL users blocked instantly**
 
 ### Technical Details
 
-- Uses `localStorage` to persist state across page reloads
-- State is browser-specific (each user's browser remembers its own state)
-- Admin can control system from any page with the console commands
-- Completely client-side implementation for easy management
+- **Uses Firebase Realtime Database** for global control
+- **Real-time synchronization** - changes apply to all users instantly
+- **No local storage** - everything is saved in Firebase
+- Admin can control system from any device/browser
+- Truly global implementation for seamless management
+
+---
+
+## 📊 Data Storage
+
+**Everything is saved in Firebase:**
+
+✅ **Contact form submissions** → Firebase Database  
+✅ **Certificate data** → Firebase Database  
+✅ **Certificate verification** → Firebase Database  
+✅ **Global system control** → Firebase Database  
+
+❌ **No localStorage usage**  
+❌ **No sessionStorage usage**  
+❌ **No cookies for data storage**  
+❌ **No local device storage**
 
 ---
 
@@ -60,8 +81,8 @@ toggleCerts()
 
 ```bash
 git add .
-git commit -m "Add certificate system control features"
+git commit -m "Add Firebase-based certificate system with global control"
 git push
 ```
 
-The certificate system will work the same way on your live deployment!
+The certificate system will work the same way on your live deployment with real-time global control!
