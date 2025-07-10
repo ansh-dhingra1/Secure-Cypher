@@ -44,6 +44,86 @@
       <script src="https://unpkg.com/@pdf-lib/fontkit@0.0.4"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
       
+      <!-- Fallback CDN sources for PDFLib -->
+      <script>
+        // Check if PDFLib loaded successfully, if not try alternative CDN
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                if (typeof PDFLib === 'undefined') {
+                    console.warn('PDFLib not loaded from primary CDN, trying alternative...');
+                    
+                    const fallbackScript = document.createElement('script');
+                    fallbackScript.src = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+                    fallbackScript.onload = function() {
+                        console.log('PDFLib loaded from fallback CDN');
+                        if (window.initializeLibraries) {
+                            window.initializeLibraries();
+                        }
+                    };
+                    fallbackScript.onerror = function() {
+                        console.error('Failed to load PDFLib from fallback CDN');
+                    };
+                    document.head.appendChild(fallbackScript);
+                }
+                
+                if (typeof fontkit === 'undefined') {
+                    console.warn('Fontkit not loaded from primary CDN, trying alternative...');
+                    
+                    const fallbackFontkitScript = document.createElement('script');
+                    fallbackFontkitScript.src = 'https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.min.js';
+                    fallbackFontkitScript.onload = function() {
+                        console.log('Fontkit loaded from fallback CDN');
+                        if (window.initializeLibraries) {
+                            window.initializeLibraries();
+                        }
+                    };
+                    fallbackFontkitScript.onerror = function() {
+                        console.error('Failed to load Fontkit from fallback CDN');
+                    };
+                    document.head.appendChild(fallbackFontkitScript);
+                }
+            }, 3000); // Wait 3 seconds before trying fallback
+        });
+      </script>
+      
+      <!-- Retry mechanism for PDF libraries -->
+      <script>
+        // Function to reload PDF libraries
+        window.reloadPDFLibraries = function() {
+            console.log('Attempting to reload PDF libraries...');
+            
+            // Remove existing scripts
+            const existingScripts = document.querySelectorAll('script[src*="pdf-lib"], script[src*="fontkit"]');
+            existingScripts.forEach(script => script.remove());
+            
+            // Create new script elements
+            const pdfLibScript = document.createElement('script');
+            pdfLibScript.src = 'https://unpkg.com/pdf-lib/dist/pdf-lib.min.js';
+            pdfLibScript.onload = function() {
+                console.log('PDFLib script reloaded successfully');
+            };
+            pdfLibScript.onerror = function() {
+                console.error('Failed to reload PDFLib script');
+            };
+            
+            const fontkitScript = document.createElement('script');
+            fontkitScript.src = 'https://unpkg.com/@pdf-lib/fontkit@0.0.4';
+            fontkitScript.onload = function() {
+                console.log('Fontkit script reloaded successfully');
+                // Trigger library re-initialization
+                if (window.initializeLibraries) {
+                    window.initializeLibraries();
+                }
+            };
+            fontkitScript.onerror = function() {
+                console.error('Failed to reload Fontkit script');
+            };
+            
+            // Add scripts to head
+            document.head.appendChild(pdfLibScript);
+            document.head.appendChild(fontkitScript);
+        };
+      </script>
       <style>
          /* Modal styles */
          .modal {
