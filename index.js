@@ -4,42 +4,12 @@
 const userName = document.getElementById("name");
 const submitBtn = document.getElementById("submitBtn");
 
-// Check if PDFLib is available
-if (typeof PDFLib === 'undefined') {
-    console.error('PDFLib is not loaded. Please check the CDN link.');
-    alert('PDF library not loaded. Please refresh the page and try again.');
-}
+// Simple library availability check
+console.log('PDFLib available:', typeof PDFLib !== 'undefined');
+console.log('fontkit available:', typeof fontkit !== 'undefined');
 
-// Check if fontkit is available
-if (typeof fontkit === 'undefined') {
-    console.error('Fontkit is not loaded. Please check the CDN link.');
-    alert('Font library not loaded. Please refresh the page and try again.');
-}
-
-// Initialize PDFLib and fontkit
-let PDFDocument, rgb, degrees, fontkitInstance;
-
-const initializeLibraries = async () => {
-    try {
-        console.log('Initializing PDFLib...');
-        const pdfLib = await waitForPDFLib();
-        PDFDocument = pdfLib.PDFDocument;
-        rgb = pdfLib.rgb;
-        degrees = pdfLib.degrees;
-        
-        console.log('Initializing Fontkit...');
-        fontkitInstance = await waitForFontkit();
-        
-        console.log('All libraries initialized successfully');
-        return true;
-    } catch (error) {
-        console.error('Failed to initialize libraries:', error);
-        return false;
-    }
-};
-
-// Make function globally accessible for retry mechanism
-window.initializeLibraries = initializeLibraries;
+// Direct access to PDFLib components
+const { PDFDocument, rgb, degrees } = PDFLib || {};
 
 // Firebase Database Reference for Certificates
 let certificateRef = firebase.database().ref('Certificates');
@@ -603,20 +573,20 @@ const generatePDF = async (name, email, phone, college) => {
         console.log('Starting PDF generation...');
         console.log('Parameters:', { name, email, phone, college });
         
-        // Check if libraries are initialized
-        if (!PDFDocument || !rgb || !degrees || !fontkitInstance) {
-            console.log('Libraries not initialized, attempting to initialize...');
-            const initialized = await initializeLibraries();
-            if (!initialized) {
-                throw new Error('Failed to initialize PDF libraries. Please refresh the page and try again.');
-            }
+        // Check if libraries are available
+        if (!PDFDocument || !rgb || !degrees) {
+            throw new Error('PDFLib is not properly loaded. Please refresh the page and try again.');
+        }
+        
+        if (typeof fontkit === 'undefined') {
+            throw new Error('Fontkit is not properly loaded. Please refresh the page and try again.');
         }
         
         console.log('Libraries loaded successfully');
         console.log('PDFDocument available:', typeof PDFDocument);
         console.log('rgb available:', typeof rgb);
         console.log('degrees available:', typeof degrees);
-        console.log('fontkitInstance available:', typeof fontkitInstance);
+        console.log('fontkit available:', typeof fontkit);
         
         // Generate unique certificate code first
         const certificateCode = generateCertificateCode();
@@ -712,7 +682,7 @@ const generatePDF = async (name, email, phone, college) => {
                 throw new Error('pdfDoc.registerFontkit is not a function. Fontkit may not be properly loaded.');
             }
             
-            pdfDoc.registerFontkit(fontkitInstance);
+            pdfDoc.registerFontkit(fontkit);
 
             console.log('Fetching font...');
             //get font
@@ -831,20 +801,7 @@ const generatePDF = async (name, email, phone, college) => {
         // More specific error messages
         let errorMessage = 'Error generating certificate. ';
         if (error.message.includes('PDFLib') || error.message.includes('PDFDocument') || error.message.includes('addPage')) {
-            errorMessage += 'PDF library not loaded properly. Please try refreshing the page or click "Retry" below.';
-            
-            // Show retry dialog
-            const retry = confirm(errorMessage + '\n\nClick OK to retry loading PDF libraries, or Cancel to continue.');
-            if (retry) {
-                console.log('User chose to retry loading PDF libraries');
-                if (window.reloadPDFLibraries) {
-                    window.reloadPDFLibraries();
-                    alert('PDF libraries are being reloaded. Please try generating the certificate again in a few seconds.');
-                } else {
-                    alert('Please refresh the page to retry loading PDF libraries.');
-                }
-            }
-            return; // Don't show the alert since we handled it with confirm
+            errorMessage += 'PDF library not loaded properly. Please refresh the page and try again.';
         } else if (error.message.includes('fetch')) {
             errorMessage += 'Could not load certificate template. Please check your internet connection.';
         } else if (error.message.includes('font')) {
@@ -1006,16 +963,9 @@ const checkRequiredFiles = async () => {
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('=== Secure Cypher Certificate System Initialization ===');
     
-    // Initialize libraries first
-    console.log('Initializing PDF libraries...');
-    const librariesInitialized = await initializeLibraries();
-    
-    if (!librariesInitialized) {
-        console.error('Failed to initialize PDF libraries');
-        alert('Warning: PDF libraries failed to load. Certificate generation may not work properly. Please refresh the page.');
-    } else {
-        console.log('PDF libraries initialized successfully');
-    }
+    // Simple library availability check
+    console.log('PDFLib available:', typeof PDFLib !== 'undefined');
+    console.log('fontkit available:', typeof fontkit !== 'undefined');
     
     console.log('Checking required files...');
     const fileCheck = await checkRequiredFiles();
@@ -1031,8 +981,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Check if all required libraries are loaded
     console.log('Checking required libraries...');
     const libraries = {
-        'PDFLib': typeof PDFDocument !== 'undefined' && typeof PDFDocument.create === 'function',
-        'Fontkit': typeof fontkitInstance !== 'undefined',
+        'PDFLib': typeof PDFLib !== 'undefined' && PDFLib.PDFDocument,
+        'Fontkit': typeof fontkit !== 'undefined',
         'Firebase': typeof firebase !== 'undefined',
         'jQuery': typeof $ !== 'undefined'
     };
