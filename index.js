@@ -416,7 +416,7 @@ submitBtn.addEventListener("click", async (e) => {
             submitBtn.classList.remove('loading', 'success');
             submitBtn.disabled = false;
         }
-    } else {
+      } else {
         console.log('Validation failed, focusing on first invalid field');
         // Focus on the first invalid field
         if (!isNameValid) {
@@ -597,7 +597,7 @@ const generatePDF = async (name, email, phone, college) => {
         let useFallback = false;
         
         try {
-            const response = await fetch("Certificate_nagpur.pdf");
+            const response = await fetch("certificate_nagpur.pdf");
             console.log('PDF fetch response status:', response.status);
             
             if (!response.ok) {
@@ -606,6 +606,11 @@ const generatePDF = async (name, email, phone, college) => {
             
             existingPdfBytes = await response.arrayBuffer();
             console.log('PDF template loaded successfully, size:', existingPdfBytes.byteLength);
+            
+            // Verify the PDF bytes are valid
+            if (existingPdfBytes.byteLength === 0) {
+                throw new Error('PDF template file is empty');
+            }
         } catch (error) {
             console.warn('Could not fetch PDF template, creating fallback PDF...', error);
             useFallback = true;
@@ -672,6 +677,7 @@ const generatePDF = async (name, email, phone, college) => {
             
             pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
             console.log('PDF document loaded from template');
+            console.log('PDF has', pdfDoc.getPageCount(), 'pages');
             
             console.log('Registering fontkit...');
             if (!pdfDoc.registerFontkit || typeof pdfDoc.registerFontkit !== 'function') {
@@ -681,7 +687,7 @@ const generatePDF = async (name, email, phone, college) => {
             pdfDoc.registerFontkit(fontkit);
 
             console.log('Fetching font...');
-            //get font
+  //get font
             let fontBytes;
             
             try {
@@ -696,7 +702,7 @@ const generatePDF = async (name, email, phone, college) => {
                 console.log('Font loaded successfully, size:', fontBytes.byteLength);
                 
                 console.log('Embedding font...');
-                // Embed our custom font in the document
+  // Embed our custom font in the document
                 if (!pdfDoc.embedFont || typeof pdfDoc.embedFont !== 'function') {
                     throw new Error('pdfDoc.embedFont is not a function. PDFLib may not be properly loaded.');
                 }
@@ -710,14 +716,17 @@ const generatePDF = async (name, email, phone, college) => {
                 console.log('Using default Helvetica font');
             }
             
-            // Get the first page of the document
+   // Get the first page of the document
             if (!pdfDoc.getPages || typeof pdfDoc.getPages !== 'function') {
                 throw new Error('pdfDoc.getPages is not a function. PDFLib may not be properly loaded.');
             }
             
-            const pages = pdfDoc.getPages();
+               const pages = pdfDoc.getPages();
             const firstPage = pages[0];
             console.log('Got first page, dimensions:', firstPage.getSize());
+            
+            // Check if the page has existing content
+            console.log('Page has existing content objects:', firstPage.node.Resources ? 'Yes' : 'No');
          
             // Calculate text width to center it
             const fontSize = 55;
@@ -733,9 +742,9 @@ const generatePDF = async (name, email, phone, college) => {
             console.log('Calculated center X position:', centerX);
          
             // Draw a string of text centered on the first page
-            firstPage.drawText(name, {
+   firstPage.drawText(name, {
               x: centerX,
-              y: 270,
+     y: 270,
               size: fontSize,
               font: SanChezFont,
               color: PDFLib.rgb(1.0, 0.84, 0.00),
@@ -758,12 +767,12 @@ const generatePDF = async (name, email, phone, college) => {
         }
      
         console.log('Serializing PDF...');
-        // Serialize the PDFDocument to bytes (a Uint8Array)
+  // Serialize the PDFDocument to bytes (a Uint8Array)
         if (!pdfDoc.saveAsBase64 || typeof pdfDoc.saveAsBase64 !== 'function') {
             throw new Error('pdfDoc.saveAsBase64 is not a function. PDFLib may not be properly loaded.');
         }
         
-        const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
+  const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
         console.log('PDF serialized successfully');
 
         console.log('Creating download link...');
@@ -927,7 +936,7 @@ const showCertificateCodeNotification = (certificateCode) => {
 // Function to check if required files are accessible
 const checkRequiredFiles = async () => {
     const files = [
-        { name: 'PDF Template', url: 'Certificate_nagpur.pdf' },
+        { name: 'PDF Template', url: 'certificate_nagpur.pdf' },
         { name: 'Font File', url: 'Paul-le1V.ttf' }
     ];
     
