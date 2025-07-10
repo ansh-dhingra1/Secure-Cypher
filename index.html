@@ -86,7 +86,7 @@ https://templatemo.com/tm-569-edu-meeting
                           <li><a href="gallery.html" target="_blank">Gallery</a></li>
                           <li class="scroll-to-section"><a href="#apply">About Us</a></li>
                           <li class="scroll-to-section"><a href="#contact"> Give Feedback</a></li> 
-                       <li ><a href="certificate.html">Get Certificate</a></li> 
+                       <li ><a href="certificate.html" id="certificateBtn">Get Certificate</a></li> 
                      </ul>        
                       <a class='menu-trigger'>
                           <span>Menu</span>
@@ -1222,9 +1222,139 @@ This is for courses
         font-size: 12px !important;
       }
     }
+    
+    /* Certificate button disabled state */
+    #certificateBtn.disabled,
+    li #certificateBtn.disabled,
+    .nav li #certificateBtn.disabled,
+    ul li #certificateBtn.disabled,
+    nav ul li #certificateBtn.disabled,
+    .main-nav ul li #certificateBtn.disabled {
+        opacity: 0.5 !important;
+        cursor: not-allowed !important;
+        pointer-events: none !important;
+        text-decoration: line-through !important;
+        position: relative;
+        color: #666 !important;
+    }
+    
+    #certificateBtn.disabled:hover,
+    li #certificateBtn.disabled:hover,
+    .nav li #certificateBtn.disabled:hover {
+        transform: none !important;
+        color: #666 !important;
+        cursor: not-allowed !important;
+        text-decoration: line-through !important;
+    }
+    
+    /* Removed the (Disabled) text - keeping the styling clean */
+    
+    /* Override any existing nav link styles for disabled state */
+    .nav li a#certificateBtn.disabled {
+        cursor: not-allowed !important;
+        pointer-events: none !important;
+    }
+    
+    /* Parent li element when certificate is disabled */
+    .certificate-disabled-parent {
+        cursor: not-allowed !important;
+    }
+    
+    .certificate-disabled-parent:hover {
+        cursor: not-allowed !important;
+    }
+    
+    /* Force cursor for all states */
+    #certificateBtn.disabled * {
+        cursor: not-allowed !important;
+    }
+    
+    /* Ensure cursor shows on hover over the entire button area */
+    body #certificateBtn.disabled {
+        cursor: not-allowed !important;
+    }
   </style>
 
   <script>
+
+// Certificate System Control
+const CERTIFICATE_SYSTEM_KEY = 'scs_certificate_enabled';
+
+const isCertificateSystemEnabled = () => {
+    return localStorage.getItem(CERTIFICATE_SYSTEM_KEY) === 'true';
+};
+
+const updateCertificateButtonState = () => {
+    const certificateBtn = document.getElementById('certificateBtn');
+    if (certificateBtn) {
+        if (isCertificateSystemEnabled()) {
+            // Enable the button
+            certificateBtn.classList.remove('disabled');
+            certificateBtn.style.pointerEvents = 'auto';
+            certificateBtn.style.opacity = '1';
+            certificateBtn.style.cursor = 'pointer';
+            certificateBtn.style.color = '';
+            certificateBtn.style.textDecoration = '';
+            certificateBtn.href = 'certificate.html';
+            certificateBtn.setAttribute('title', 'Get your certificate now!');
+            certificateBtn.onclick = null;
+            
+            // Clean up parent li styling
+            const parentLi = certificateBtn.closest('li');
+            if (parentLi) {
+                parentLi.style.cursor = '';
+                parentLi.classList.remove('certificate-disabled-parent');
+            }
+        } else {
+            // Disable the button
+            certificateBtn.classList.add('disabled');
+            certificateBtn.style.pointerEvents = 'none';
+            certificateBtn.style.opacity = '0.5';
+            certificateBtn.style.cursor = 'not-allowed';
+            certificateBtn.style.color = '#666';
+            certificateBtn.style.textDecoration = 'line-through';
+            certificateBtn.href = '#';
+            certificateBtn.setAttribute('title', 'Certificate generation is currently disabled');
+            
+            // Force cursor style on parent elements too
+            const parentLi = certificateBtn.closest('li');
+            if (parentLi) {
+                parentLi.style.cursor = 'not-allowed';
+                parentLi.classList.add('certificate-disabled-parent');
+            }
+            
+            // Prevent click
+            certificateBtn.onclick = function(e) {
+                e.preventDefault();
+                alert('Certificate generation is currently not available. Please check back later.');
+                return false;
+            };
+        }
+    }
+};
+
+// Admin functions (accessible via browser console)
+window.enableCerts = () => {
+    localStorage.setItem(CERTIFICATE_SYSTEM_KEY, 'true');
+    updateCertificateButtonState();
+    alert('Certificate system ENABLED! Users can now generate certificates.');
+    console.log('✅ Certificate system ENABLED');
+};
+
+window.disableCerts = () => {
+    localStorage.setItem(CERTIFICATE_SYSTEM_KEY, 'false');
+    updateCertificateButtonState();
+    alert('Certificate system DISABLED! Certificate page is now inaccessible.');
+    console.log('❌ Certificate system DISABLED');
+};
+
+window.toggleCerts = () => {
+    if (isCertificateSystemEnabled()) {
+        window.disableCerts();
+    } else {
+        window.enableCerts();
+    }
+};
 
 // Function to update current date
 function updateCurrentDate() {
@@ -1241,6 +1371,10 @@ function updateCurrentDate() {
 // Update date when page loads
 document.addEventListener('DOMContentLoaded', function() {
   updateCurrentDate();
+  
+  // Initialize certificate system state
+  updateCertificateButtonState();
+  console.log('Certificate system status:', isCertificateSystemEnabled() ? 'ENABLED' : 'DISABLED');
   
   // Mobile menu functionality
   const menuTrigger = document.querySelector('.menu-trigger');

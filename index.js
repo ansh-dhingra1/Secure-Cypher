@@ -1,15 +1,60 @@
 
 
+// Debug function to manually enable the submit button (for testing)
+window.enableSubmitBtn = () => {
+    const submitBtn = document.getElementById("submitBtn");
+    if (submitBtn) {
+        // Fill in dummy data and trigger validation instead of manually enabling
+        const nameInput = document.getElementById("name");
+        const emailInput = document.getElementById("email");
+        const phoneInput = document.getElementById("phone");
+        const collegeInput = document.getElementById("college");
+        
+        if (nameInput && emailInput && phoneInput && collegeInput) {
+            nameInput.value = "Test User";
+            emailInput.value = "test@example.com";
+            phoneInput.value = "1234567890";
+            collegeInput.value = "Test College";
+            
+            // Trigger validation to enable button naturally
+            checkFormValidity();
+            
+            console.log('✅ Form filled with test data and validation triggered');
+            alert('Form filled with test data! Button should now be enabled.');
+        } else {
+            console.error('❌ Form elements not found');
+            alert('Form elements not found!');
+        }
+    } else {
+        console.error('❌ Submit button not found');
+        alert('Submit button not found!');
+    }
+};
 
-const userName = document.getElementById("name");
-const submitBtn = document.getElementById("submitBtn");
-
-// Simple library availability check
-console.log('PDFLib available:', typeof PDFLib !== 'undefined');
-console.log('fontkit available:', typeof fontkit !== 'undefined');
+// Debug function to check current form state
+window.checkFormState = () => {
+    const nameInput = document.getElementById("name");
+    const emailInput = document.getElementById("email");
+    const phoneInput = document.getElementById("phone");
+    const collegeInput = document.getElementById("college");
+    const submitBtn = document.getElementById("submitBtn");
+    
+    console.log('=== FORM STATE DEBUG ===');
+    console.log('Name value:', nameInput?.value || 'NOT FOUND');
+    console.log('Email value:', emailInput?.value || 'NOT FOUND');
+    console.log('Phone value:', phoneInput?.value || 'NOT FOUND');
+    console.log('College value:', collegeInput?.value || 'NOT FOUND');
+    console.log('Submit button disabled:', submitBtn?.disabled || 'NOT FOUND');
+    
+    if (nameInput && emailInput && phoneInput && collegeInput) {
+        alert(`Form State:\nName: ${nameInput.value || '(empty)'}\nEmail: ${emailInput.value || '(empty)'}\nPhone: ${phoneInput.value || '(empty)'}\nCollege: ${collegeInput.value || '(empty)'}\nButton Disabled: ${submitBtn.disabled}`);
+    } else {
+        alert('Some form elements are missing!');
+    }
+};
 
 // Firebase Database Reference for Certificates
-let certificateRef = firebase.database().ref('Certificates');
+let certificateRef;
 
 // Function to generate unique certificate code
 const generateCertificateCode = () => {
@@ -69,365 +114,186 @@ const verifyCertificate = (code) => {
     });
 };
 
-// Form validation functions with field tracking
-let fieldTouched = {
-    name: false,
-    email: false,
-    phone: false,
-    college: false
+// Form validation functions
+const validateName = (name) => {
+    return name.trim().length >= 3 && name.trim().length <= 64;
 };
 
-const validateName = (name, showError = false) => {
-    const nameInput = document.getElementById("name");
-    const nameError = document.getElementById("nameError");
-    
-    if (name.length < 3) {
-        nameInput.classList.add("input-error");
-        nameInput.classList.remove("input-valid");
-        if (showError && fieldTouched.name) {
-            nameError.textContent = "Name must be at least 3 characters long";
-            nameError.style.display = "block";
-        }
-        return false;
-    } else if (name.length > 64) {
-        nameInput.classList.add("input-error");
-        nameInput.classList.remove("input-valid");
-        if (showError && fieldTouched.name) {
-            nameError.textContent = "Name cannot exceed 64 characters";
-            nameError.style.display = "block";
-        }
-        return false;
-    } else {
-        nameInput.classList.remove("input-error");
-        nameInput.classList.add("input-valid");
-        nameError.style.display = "none";
-        return true;
-    }
-};
-
-const validateEmail = (email, showError = false) => {
-    const emailInput = document.getElementById("email");
-    const emailError = document.getElementById("emailError");
-    // More strict email regex that prevents special characters in domain
+const validateEmail = (email) => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    
-    if (!emailRegex.test(email)) {
-        emailInput.classList.add("input-error");
-        emailInput.classList.remove("input-valid");
-        if (showError && fieldTouched.email) {
-            emailError.textContent = "Please enter a valid email address";
-            emailError.style.display = "block";
-        }
-        return false;
-    } else {
-        emailInput.classList.remove("input-error");
-        emailInput.classList.add("input-valid");
-        emailError.style.display = "none";
-        return true;
-    }
+    return emailRegex.test(email.trim());
 };
 
-const validatePhone = (phone, showError = false) => {
-    const phoneInput = document.getElementById("phone");
-    const phoneError = document.getElementById("phoneError");
-    // Remove all non-digit characters and check for exactly 10 digits
+const validatePhone = (phone) => {
     const cleanPhone = phone.replace(/\D/g, '');
-    
-    if (cleanPhone.length !== 10) {
-        phoneInput.classList.add("input-error");
-        phoneInput.classList.remove("input-valid");
-        if (showError && fieldTouched.phone) {
-            phoneError.style.display = "block";
-        }
-        return false;
-    } else {
-        phoneInput.classList.remove("input-error");
-        phoneInput.classList.add("input-valid");
-        phoneError.style.display = "none";
-        return true;
-    }
+    return cleanPhone.length === 10;
 };
 
-const validateCollege = (college, showError = false) => {
-    const collegeInput = document.getElementById("college");
-    const collegeError = document.getElementById("collegeError");
-    
-    const trimmedCollege = college.trim();
-    
-    // Check minimum length
-    if (trimmedCollege.length < 3) {
-        collegeInput.classList.add("input-error");
-        collegeInput.classList.remove("input-valid");
-        if (showError && fieldTouched.college) {
-            collegeError.textContent = "College name must be at least 3 characters long";
-            collegeError.style.display = "block";
-        }
-        return false;
-    }
-    
-    // Check if it's only digits
-    if (/^\d+$/.test(trimmedCollege)) {
-        collegeInput.classList.add("input-error");
-        collegeInput.classList.remove("input-valid");
-        if (showError && fieldTouched.college) {
-            collegeError.textContent = "College name cannot contain only numbers";
-            collegeError.style.display = "block";
-        }
-        return false;
-    }
-    
-    // Check if it contains at least one letter
-    if (!/[a-zA-Z]/.test(trimmedCollege)) {
-        collegeInput.classList.add("input-error");
-        collegeInput.classList.remove("input-valid");
-        if (showError && fieldTouched.college) {
-            collegeError.textContent = "College name must contain at least one letter";
-            collegeError.style.display = "block";
-        }
-        return false;
-    }
-    
-    // Check for common invalid patterns
-    const invalidPatterns = [
-        /^[0-9\s\-\(\)]+$/, // Only numbers, spaces, hyphens, parentheses
-        /^[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/, // Only special characters
-        /^(test|demo|example|sample|xyz|abc|123)$/i, // Common test values
-        /^[a-zA-Z]{1,2}$/, // Too short (1-2 letters only)
-    ];
-    
-    for (let pattern of invalidPatterns) {
-        if (pattern.test(trimmedCollege)) {
-            collegeInput.classList.add("input-error");
-            collegeInput.classList.remove("input-valid");
-            if (showError && fieldTouched.college) {
-                collegeError.textContent = "Please enter a valid college name";
-                collegeError.style.display = "block";
-            }
-            return false;
-        }
-    }
-    
-    // Check for reasonable length (not too long)
-    if (trimmedCollege.length > 100) {
-        collegeInput.classList.add("input-error");
-        collegeInput.classList.remove("input-valid");
-        if (showError && fieldTouched.college) {
-            collegeError.textContent = "College name is too long (maximum 100 characters)";
-            collegeError.style.display = "block";
-        }
-        return false;
-    }
-    
-    // If all validations pass
-    collegeInput.classList.remove("input-error");
-    collegeInput.classList.add("input-valid");
-    collegeError.style.display = "none";
-    return true;
+const validateCollege = (college) => {
+    const trimmed = college.trim();
+    return trimmed.length >= 3 && /[a-zA-Z]/.test(trimmed) && !/^\d+$/.test(trimmed);
 };
 
 const checkFormValidity = () => {
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    const phone = document.getElementById("phone").value;
-    const college = document.getElementById("college").value;
-    const submitBtn = document.getElementById("submitBtn");
-    
-    const isNameValid = validateName(name, true);
-    const isEmailValid = validateEmail(email, true);
-    const isPhoneValid = validatePhone(phone, true);
-    const isCollegeValid = validateCollege(college, true);
-    
-    if (isNameValid && isEmailValid && isPhoneValid && isCollegeValid) {
-        submitBtn.disabled = false;
-    } else {
-        submitBtn.disabled = true;
-    }
-};
-
-// Add event listeners for form validation
-document.addEventListener('DOMContentLoaded', function() {
     const nameInput = document.getElementById("name");
     const emailInput = document.getElementById("email");
     const phoneInput = document.getElementById("phone");
     const collegeInput = document.getElementById("college");
-    const form = document.getElementById("fo");
+    const submitBtn = document.getElementById("submitBtn");
     
-    // Prevent form submission on Enter key
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            // Don't do anything here - let the button click handler handle everything
-        });
-    }
-    
-    // Name validation - on blur and input
-    nameInput.addEventListener('focus', () => {
-        fieldTouched.name = true;
-    });
-    
-    nameInput.addEventListener('blur', () => {
-        fieldTouched.name = true;
-        // Capitalize name properly
-        const capitalizedName = nameInput.value.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-        nameInput.value = capitalizedName;
-        validateName(capitalizedName, true);
-        checkFormValidity();
-    });
-    
-    nameInput.addEventListener('input', () => {
-        validateName(nameInput.value, false);
-        checkFormValidity();
-    });
-    
-    // Email validation - on blur and input
-    emailInput.addEventListener('focus', () => {
-        fieldTouched.email = true;
-    });
-    
-    emailInput.addEventListener('blur', () => {
-        fieldTouched.email = true;
-        validateEmail(emailInput.value, true);
-        checkFormValidity();
-    });
-    
-    emailInput.addEventListener('input', () => {
-        validateEmail(emailInput.value, false);
-        checkFormValidity();
-    });
-    
-    // Phone validation - on blur and input
-    phoneInput.addEventListener('focus', () => {
-        fieldTouched.phone = true;
-    });
-    
-    phoneInput.addEventListener('blur', () => {
-        fieldTouched.phone = true;
-        validatePhone(phoneInput.value, true);
-        checkFormValidity();
-    });
-    
-    phoneInput.addEventListener('input', () => {
-        validatePhone(phoneInput.value, false);
-        checkFormValidity();
-    });
-    
-    // College validation - on blur and input
-    collegeInput.addEventListener('focus', () => {
-        fieldTouched.college = true;
-    });
-    
-    collegeInput.addEventListener('blur', () => {
-        fieldTouched.college = true;
-        validateCollege(collegeInput.value, true);
-        checkFormValidity();
-    });
-    
-    collegeInput.addEventListener('input', () => {
-        validateCollege(collegeInput.value, false);
-        checkFormValidity();
-    });
-});
-
-submitBtn.addEventListener("click", async (e) => {
-    e.preventDefault(); // Prevent form submission
-    console.log('Submit button clicked');
-    
-    // Prevent multiple clicks
-    if (submitBtn.disabled) {
-        console.log('Button already disabled, ignoring click');
+    if (!nameInput || !emailInput || !phoneInput || !collegeInput || !submitBtn) {
         return;
     }
     
-    const val = userName.value;
-    const email = document.getElementById("email").value;
-    const phone = document.getElementById("phone").value;
-    const college = document.getElementById("college").value;
+    const isNameValid = validateName(nameInput.value);
+    const isEmailValid = validateEmail(emailInput.value);
+    const isPhoneValid = validatePhone(phoneInput.value);
+    const isCollegeValid = validateCollege(collegeInput.value);
     
-    console.log('Form values:', { name: val, email, phone, college });
+    const allValid = isNameValid && isEmailValid && isPhoneValid && isCollegeValid;
     
-    // Validate all fields before proceeding
-    const isNameValid = validateName(val, true);
-    const isEmailValid = validateEmail(email, true);
-    const isPhoneValid = validatePhone(phone, true);
-    const isCollegeValid = validateCollege(college, true);
-    
-    console.log('Validation results:', { isNameValid, isEmailValid, isPhoneValid, isCollegeValid });
-    
-    if (isNameValid && isEmailValid && isPhoneValid && isCollegeValid) {
-        console.log('All validations passed, starting certificate generation...');
-        
-        // Set loading state
-        const originalText = submitBtn.textContent;
-        submitBtn.textContent = 'Generating Certificate...';
+    if (allValid) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.pointerEvents = 'auto';
+        submitBtn.style.cursor = 'pointer';
+    } else {
         submitBtn.disabled = true;
-        submitBtn.classList.add('loading');
+        submitBtn.style.opacity = '0.6';
+        submitBtn.style.pointerEvents = 'none';
+        submitBtn.style.cursor = 'not-allowed';
+    }
+};
+
+// Certificate form setup
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Firebase reference with delay to ensure Firebase is loaded
+    setTimeout(() => {
+        if (typeof firebase !== 'undefined' && firebase.database) {
+            certificateRef = firebase.database().ref('Certificates');
+            console.log('✅ Firebase initialized for certificates');
+        } else {
+            console.warn('⚠️ Firebase not available');
+        }
+    }, 100);
+    
+    console.log('PDFLib available:', typeof PDFLib !== 'undefined');
+    console.log('fontkit available:', typeof fontkit !== 'undefined');
+    
+    const form = document.getElementById("fo");
+    const submitBtn = document.getElementById("submitBtn");
+    const userName = document.getElementById("name");
+    const emailInput = document.getElementById("email");
+    const phoneInput = document.getElementById("phone");
+    const collegeInput = document.getElementById("college");
+    
+    // Check if we're on the certificate page
+    if (submitBtn && userName && emailInput && phoneInput && collegeInput) {
+        console.log('✅ Certificate page detected - setting up form with validation');
         
-        try {
-            // Save to Firebase first
-            if (typeof sendMessage === 'function') {
-                sendMessage(val, email, phone, college);
+        // Start with button disabled until form is properly filled
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.6';
+        submitBtn.style.pointerEvents = 'none';
+        submitBtn.style.cursor = 'not-allowed';
+        
+        // Add validation listeners to all form fields
+        [userName, emailInput, phoneInput, collegeInput].forEach(input => {
+            input.addEventListener('input', checkFormValidity);
+            input.addEventListener('blur', checkFormValidity);
+        });
+        
+        // Initial form validity check
+        checkFormValidity();
+        
+        // Prevent form submission on Enter key
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+            });
+        }
+        
+        // Add submit button click handler
+        submitBtn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            console.log('Submit button clicked');
+            
+            // Prevent multiple clicks
+            if (submitBtn.disabled) {
+                console.log('Button already disabled, ignoring click');
+                return;
             }
             
-            // Generate PDF certificate
-            await generatePDF(val, email, phone, college);
+            const val = userName.value;
+            const email = document.getElementById("email").value;
+            const phone = document.getElementById("phone").value;
+            const college = document.getElementById("college").value;
             
-            // Show success alert
-            const alertElement = document.querySelector('.alert');
-            if (alertElement) {
-                alertElement.style.display = 'block';
-                setTimeout(function() {
-                    alertElement.style.display = 'none';
-                }, 7000);
+            console.log('Form values:', { name: val, email, phone, college });
+            
+            // Basic checks - just make sure fields aren't completely empty
+            if (!val.trim() || !email.trim() || !phone.trim() || !college.trim()) {
+                alert('Please fill in all fields before generating your certificate.');
+                return;
             }
             
-            // Reset form
-            document.getElementById('fo').reset();
+            console.log('Basic validation passed, starting certificate generation...');
             
-            // Reset validation states
-            fieldTouched = {
-                name: false,
-                email: false,
-                phone: false,
-                college: false
-            };
+            // Set loading state
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Generating Certificate...';
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
             
-            // Reset input classes
-            document.getElementById("name").classList.remove("input-error", "input-valid");
-            document.getElementById("email").classList.remove("input-error", "input-valid");
-            document.getElementById("phone").classList.remove("input-error", "input-valid");
-            document.getElementById("college").classList.remove("input-error", "input-valid");
-            
-            // Show success state
-            submitBtn.classList.remove('loading');
-            submitBtn.classList.add('success');
-            submitBtn.textContent = 'Certificate Generated!';
-            setTimeout(() => {
+            try {
+                // Save to Firebase first
+                if (typeof sendMessage === 'function') {
+                    sendMessage(val, email, phone, college);
+                }
+                
+                // Generate PDF certificate
+                await generatePDF(val, email, phone, college);
+                
+                // Show success alert
+                const alertElement = document.querySelector('.alert');
+                if (alertElement) {
+                    alertElement.style.display = 'block';
+                    setTimeout(function() {
+                        alertElement.style.display = 'none';
+                    }, 7000);
+                }
+                
+                // Reset form
+                form.reset();
+                
+                // Reset validation after form reset
+                setTimeout(() => {
+                    checkFormValidity(); // This will disable the button again until new form is filled
+                }, 100);
+                
+                // Show success state
+                submitBtn.classList.remove('loading');
+                submitBtn.classList.add('success');
+                submitBtn.textContent = 'Certificate Generated!';
+                setTimeout(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.classList.remove('success');
+                    // Don't manually enable - let validation handle it
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Error calling generatePDF:', error);
+                alert('Error starting certificate generation: ' + error.message);
+                
+                // Reset button state on error
                 submitBtn.textContent = originalText;
-                submitBtn.classList.remove('success');
-                submitBtn.disabled = true; // Keep disabled until form is filled again
-            }, 3000);
-            
-        } catch (error) {
-            console.error('Error calling generatePDF:', error);
-            alert('Error starting certificate generation: ' + error.message);
-            
-            // Reset button state on error
-            submitBtn.textContent = originalText;
-            submitBtn.classList.remove('loading', 'success');
-            submitBtn.disabled = false;
-        }
-      } else {
-        console.log('Validation failed, focusing on first invalid field');
-        // Focus on the first invalid field
-        if (!isNameValid) {
-            document.getElementById("name").focus();
-        } else if (!isEmailValid) {
-            document.getElementById("email").focus();
-        } else if (!isPhoneValid) {
-            document.getElementById("phone").focus();
-        } else if (!isCollegeValid) {
-            document.getElementById("college").focus();
-        }
+                submitBtn.classList.remove('loading', 'success');
+                // Use validation to determine button state instead of manually enabling
+                checkFormValidity();
+            }
+        });
+        
+        console.log('✅ Certificate form ready - submit button enabled');
     }
 });
 
@@ -443,31 +309,43 @@ document.addEventListener('DOMContentLoaded', function() {
     if (verifyBtn) {
         verifyBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            modal.style.display = 'block';
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('show');
+            }, 10);
         });
     }
     
     // Close modal with X button
     if (closeBtn) {
         closeBtn.addEventListener('click', function() {
-            modal.style.display = 'none';
-            resetVerificationForm();
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                resetVerificationForm();
+            }, 300);
         });
     }
     
     // Close modal with Cancel button
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', function() {
-            modal.style.display = 'none';
-            resetVerificationForm();
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                resetVerificationForm();
+            }, 300);
         });
     }
     
     // Close modal when clicking outside
     window.addEventListener('click', function(e) {
         if (e.target === modal) {
-            modal.style.display = 'none';
-            resetVerificationForm();
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                resetVerificationForm();
+            }, 300);
         }
     });
     
@@ -967,6 +845,10 @@ const checkRequiredFiles = async () => {
 // Check files when page loads
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('=== Secure Cypher Certificate System Initialization ===');
+    
+    // Initialize certificate button state
+    updateCertificateButtonState();
+    console.log('Certificate system status:', isCertificateSystemEnabled() ? 'ENABLED' : 'DISABLED');
     
     // Simple library availability check
     console.log('PDFLib available:', typeof PDFLib !== 'undefined');
