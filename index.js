@@ -5,18 +5,481 @@ const userName = document.getElementById("name");
 const submitBtn = document.getElementById("submitBtn");
 const { PDFDocument, rgb, degrees } = PDFLib;
 
+// Firebase Database Reference for Certificates
+let certificateRef = firebase.database().ref('Certificates');
+
+// Function to generate unique certificate code
+const generateCertificateCode = () => {
+    const timestamp = Date.now().toString(36); // Convert timestamp to base36
+    const randomStr = Math.random().toString(36).substring(2, 8); // Random 6 characters
+    const year = new Date().getFullYear().toString().slice(-2); // Last 2 digits of year
+    return `CERT-${year}-${timestamp}-${randomStr}`.toUpperCase();
+};
+
+// Function to save certificate to Firebase
+const saveCertificate = (code, name, email, phone, college) => {
+    const certificateData = {
+        name: name,
+        email: email,
+        phone: phone,
+        college: college,
+        generatedDate: new Date().toISOString(),
+        verified: false,
+        code: code
+    };
+    
+    // Save to Firebase Database
+    certificateRef.child(code).set(certificateData)
+        .then(() => {
+            console.log('Certificate saved to Firebase successfully');
+        })
+        .catch((error) => {
+            console.error('Error saving certificate:', error);
+        });
+};
+
+// Function to verify certificate from Firebase
+const verifyCertificate = (code) => {
+    return new Promise((resolve) => {
+        certificateRef.child(code).once('value')
+            .then((snapshot) => {
+                if (snapshot.exists()) {
+                    const certificate = snapshot.val();
+                    // Update verification status
+                    certificateRef.child(code).update({
+                        verified: true,
+                        verifiedDate: new Date().toISOString()
+                    });
+                    
+                    resolve({
+                        valid: true,
+                        data: certificate
+                    });
+                } else {
+                    resolve({ valid: false });
+                }
+            })
+            .catch((error) => {
+                console.error('Error verifying certificate:', error);
+                resolve({ valid: false });
+            });
+    });
+};
+
+// Form validation functions with field tracking
+let fieldTouched = {
+    name: false,
+    email: false,
+    phone: false,
+    college: false
+};
+
+const validateName = (name, showError = false) => {
+    const nameInput = document.getElementById("name");
+    const nameError = document.getElementById("nameError");
+    
+    if (name.length < 3) {
+        nameInput.classList.add("input-error");
+        nameInput.classList.remove("input-valid");
+        if (showError && fieldTouched.name) {
+            nameError.textContent = "Name must be at least 3 characters long";
+            nameError.style.display = "block";
+        }
+        return false;
+    } else if (name.length > 64) {
+        nameInput.classList.add("input-error");
+        nameInput.classList.remove("input-valid");
+        if (showError && fieldTouched.name) {
+            nameError.textContent = "Name cannot exceed 64 characters";
+            nameError.style.display = "block";
+        }
+        return false;
+    } else {
+        nameInput.classList.remove("input-error");
+        nameInput.classList.add("input-valid");
+        nameError.style.display = "none";
+        return true;
+    }
+};
+
+const validateEmail = (email, showError = false) => {
+    const emailInput = document.getElementById("email");
+    const emailError = document.getElementById("emailError");
+    // More strict email regex that prevents special characters in domain
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    
+    if (!emailRegex.test(email)) {
+        emailInput.classList.add("input-error");
+        emailInput.classList.remove("input-valid");
+        if (showError && fieldTouched.email) {
+            emailError.textContent = "Please enter a valid email address";
+            emailError.style.display = "block";
+        }
+        return false;
+    } else {
+        emailInput.classList.remove("input-error");
+        emailInput.classList.add("input-valid");
+        emailError.style.display = "none";
+        return true;
+    }
+};
+
+const validatePhone = (phone, showError = false) => {
+    const phoneInput = document.getElementById("phone");
+    const phoneError = document.getElementById("phoneError");
+    // Remove all non-digit characters and check for exactly 10 digits
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    if (cleanPhone.length !== 10) {
+        phoneInput.classList.add("input-error");
+        phoneInput.classList.remove("input-valid");
+        if (showError && fieldTouched.phone) {
+            phoneError.style.display = "block";
+        }
+        return false;
+    } else {
+        phoneInput.classList.remove("input-error");
+        phoneInput.classList.add("input-valid");
+        phoneError.style.display = "none";
+        return true;
+    }
+};
+
+const validateCollege = (college, showError = false) => {
+    const collegeInput = document.getElementById("college");
+    const collegeError = document.getElementById("collegeError");
+    
+    const trimmedCollege = college.trim();
+    
+    // Check minimum length
+    if (trimmedCollege.length < 3) {
+        collegeInput.classList.add("input-error");
+        collegeInput.classList.remove("input-valid");
+        if (showError && fieldTouched.college) {
+            collegeError.textContent = "College name must be at least 3 characters long";
+            collegeError.style.display = "block";
+        }
+        return false;
+    }
+    
+    // Check if it's only digits
+    if (/^\d+$/.test(trimmedCollege)) {
+        collegeInput.classList.add("input-error");
+        collegeInput.classList.remove("input-valid");
+        if (showError && fieldTouched.college) {
+            collegeError.textContent = "College name cannot contain only numbers";
+            collegeError.style.display = "block";
+        }
+        return false;
+    }
+    
+    // Check if it contains at least one letter
+    if (!/[a-zA-Z]/.test(trimmedCollege)) {
+        collegeInput.classList.add("input-error");
+        collegeInput.classList.remove("input-valid");
+        if (showError && fieldTouched.college) {
+            collegeError.textContent = "College name must contain at least one letter";
+            collegeError.style.display = "block";
+        }
+        return false;
+    }
+    
+    // Check for common invalid patterns
+    const invalidPatterns = [
+        /^[0-9\s\-\(\)]+$/, // Only numbers, spaces, hyphens, parentheses
+        /^[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/, // Only special characters
+        /^(test|demo|example|sample|xyz|abc|123)$/i, // Common test values
+        /^[a-zA-Z]{1,2}$/, // Too short (1-2 letters only)
+    ];
+    
+    for (let pattern of invalidPatterns) {
+        if (pattern.test(trimmedCollege)) {
+            collegeInput.classList.add("input-error");
+            collegeInput.classList.remove("input-valid");
+            if (showError && fieldTouched.college) {
+                collegeError.textContent = "Please enter a valid college name";
+                collegeError.style.display = "block";
+            }
+            return false;
+        }
+    }
+    
+    // Check for reasonable length (not too long)
+    if (trimmedCollege.length > 100) {
+        collegeInput.classList.add("input-error");
+        collegeInput.classList.remove("input-valid");
+        if (showError && fieldTouched.college) {
+            collegeError.textContent = "College name is too long (maximum 100 characters)";
+            collegeError.style.display = "block";
+        }
+        return false;
+    }
+    
+    // If all validations pass
+    collegeInput.classList.remove("input-error");
+    collegeInput.classList.add("input-valid");
+    collegeError.style.display = "none";
+    return true;
+};
+
+const checkFormValidity = () => {
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    const phone = document.getElementById("phone").value;
+    const college = document.getElementById("college").value;
+    const submitBtn = document.getElementById("submitBtn");
+    
+    const isNameValid = validateName(name, true);
+    const isEmailValid = validateEmail(email, true);
+    const isPhoneValid = validatePhone(phone, true);
+    const isCollegeValid = validateCollege(college, true);
+    
+    if (isNameValid && isEmailValid && isPhoneValid && isCollegeValid) {
+        submitBtn.disabled = false;
+    } else {
+        submitBtn.disabled = true;
+    }
+};
+
+// Add event listeners for form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById("name");
+    const emailInput = document.getElementById("email");
+    const phoneInput = document.getElementById("phone");
+    const collegeInput = document.getElementById("college");
+    
+    // Name validation - on blur and input
+    nameInput.addEventListener('focus', () => {
+        fieldTouched.name = true;
+    });
+    
+    nameInput.addEventListener('blur', () => {
+        fieldTouched.name = true;
+        // Capitalize name properly
+        const capitalizedName = nameInput.value.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+        nameInput.value = capitalizedName;
+        validateName(capitalizedName, true);
+        checkFormValidity();
+    });
+    
+    nameInput.addEventListener('input', () => {
+        validateName(nameInput.value, false);
+        checkFormValidity();
+    });
+    
+    // Email validation - on blur and input
+    emailInput.addEventListener('focus', () => {
+        fieldTouched.email = true;
+    });
+    
+    emailInput.addEventListener('blur', () => {
+        fieldTouched.email = true;
+        validateEmail(emailInput.value, true);
+        checkFormValidity();
+    });
+    
+    emailInput.addEventListener('input', () => {
+        validateEmail(emailInput.value, false);
+        checkFormValidity();
+    });
+    
+    // Phone validation - on blur and input
+    phoneInput.addEventListener('focus', () => {
+        fieldTouched.phone = true;
+    });
+    
+    phoneInput.addEventListener('blur', () => {
+        fieldTouched.phone = true;
+        validatePhone(phoneInput.value, true);
+        checkFormValidity();
+    });
+    
+    phoneInput.addEventListener('input', () => {
+        validatePhone(phoneInput.value, false);
+        checkFormValidity();
+    });
+    
+    // College validation - on blur and input
+    collegeInput.addEventListener('focus', () => {
+        fieldTouched.college = true;
+    });
+    
+    collegeInput.addEventListener('blur', () => {
+        fieldTouched.college = true;
+        validateCollege(collegeInput.value, true);
+        checkFormValidity();
+    });
+    
+    collegeInput.addEventListener('input', () => {
+        validateCollege(collegeInput.value, false);
+        checkFormValidity();
+    });
+});
 
 submitBtn.addEventListener("click", () => {
-    const val =userName.value;
-    if (val.trim() !== "" && userName.checkValidity()) {
-        // console.log(val);
-        generatePDF(val);
-      } else {
-        userName.reportValidity();
-      }
+    const val = userName.value;
+    const email = document.getElementById("email").value;
+    const phone = document.getElementById("phone").value;
+    const college = document.getElementById("college").value;
+    
+    // Validate all fields before proceeding
+    const isNameValid = validateName(val, true);
+    const isEmailValid = validateEmail(email, true);
+    const isPhoneValid = validatePhone(phone, true);
+    const isCollegeValid = validateCollege(college, true);
+    
+    if (isNameValid && isEmailValid && isPhoneValid && isCollegeValid) {
+        generatePDF(val, email, phone, college);
+    } else {
+        // Focus on the first invalid field
+        if (!isNameValid) {
+            document.getElementById("name").focus();
+        } else if (!isEmailValid) {
+            document.getElementById("email").focus();
+        } else if (!isPhoneValid) {
+            document.getElementById("phone").focus();
+        } else if (!isCollegeValid) {
+            document.getElementById("college").focus();
+        }
+    }
 });
-const generatePDF = async (name) => {
-    const existingPdfBytes = await fetch("Certificate_RedTeaming.pdf").then((res) =>
+
+// Modal functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('verificationModal');
+    const verifyBtn = document.getElementById('verifyCertificateBtn');
+    const closeBtn = document.querySelector('.close');
+    const closeModalBtn = document.querySelector('.close-modal');
+    const verificationForm = document.getElementById('verificationForm');
+    
+    // Open modal
+    if (verifyBtn) {
+        verifyBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'block';
+        });
+    }
+    
+    // Close modal with X button
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            resetVerificationForm();
+        });
+    }
+    
+    // Close modal with Cancel button
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            resetVerificationForm();
+        });
+    }
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+            resetVerificationForm();
+        }
+    });
+    
+    // Handle form submission
+    if (verificationForm) {
+        verificationForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const code = document.getElementById('certificateCode').value.trim();
+            
+            if (code) {
+                // Show loading state
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Verifying...';
+                submitBtn.disabled = true;
+                
+                try {
+                    const result = await verifyCertificate(code);
+                    const successAlert = document.getElementById('verificationSuccess');
+                    const errorAlert = document.getElementById('verificationError');
+                    const certificateDetails = document.getElementById('certificateDetails');
+                    const verificationFormDiv = document.querySelector('.verification-form');
+                    
+                    if (result.valid) {
+                        // Hide form and show certificate details
+                        verificationFormDiv.classList.add('hidden');
+                        certificateDetails.style.display = 'block';
+                        successAlert.style.display = 'none';
+                        errorAlert.style.display = 'none';
+                        
+                        // Populate certificate details
+                        document.getElementById('certName').textContent = result.data.name;
+                        document.getElementById('certEmail').textContent = result.data.email;
+                        document.getElementById('certPhone').textContent = result.data.phone;
+                        document.getElementById('certCollege').textContent = result.data.college;
+                        document.getElementById('certGenerated').textContent = new Date(result.data.generatedDate).toLocaleDateString();
+                        document.getElementById('certVerified').textContent = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString();
+                    } else {
+                        // Show error message
+                        errorAlert.style.display = 'block';
+                        successAlert.style.display = 'none';
+                        certificateDetails.style.display = 'none';
+                        verificationFormDiv.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error('Verification error:', error);
+                    const errorAlert = document.getElementById('verificationError');
+                    errorAlert.style.display = 'block';
+                    errorAlert.textContent = 'Error verifying certificate. Please try again.';
+                } finally {
+                    // Reset button state
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
+        });
+    }
+    
+    // Handle "Verify Another Certificate" button
+    const verifyAnotherBtn = document.getElementById('verifyAnotherBtn');
+    if (verifyAnotherBtn) {
+        verifyAnotherBtn.addEventListener('click', function() {
+            const certificateDetails = document.getElementById('certificateDetails');
+            const verificationFormDiv = document.querySelector('.verification-form');
+            const successAlert = document.getElementById('verificationSuccess');
+            const errorAlert = document.getElementById('verificationError');
+            
+            // Hide certificate details and show form again
+            certificateDetails.style.display = 'none';
+            verificationFormDiv.classList.remove('hidden');
+            successAlert.style.display = 'none';
+            errorAlert.style.display = 'none';
+            
+            // Reset form
+            if (verificationForm) {
+                verificationForm.reset();
+            }
+        });
+    }
+    
+    // Reset form function
+    function resetVerificationForm() {
+        if (verificationForm) {
+            verificationForm.reset();
+        }
+        const successAlert = document.getElementById('verificationSuccess');
+        const errorAlert = document.getElementById('verificationError');
+        const certificateDetails = document.getElementById('certificateDetails');
+        const verificationFormDiv = document.querySelector('.verification-form');
+        
+        if (successAlert) successAlert.style.display = 'none';
+        if (errorAlert) errorAlert.style.display = 'none';
+        if (certificateDetails) certificateDetails.style.display = 'none';
+        if (verificationFormDiv) verificationFormDiv.classList.remove('hidden');
+    }
+});
+
+const generatePDF = async (name, email, phone, college) => {
+    const existingPdfBytes = await fetch("Certificate_nagpur.pdf").then((res) =>
       res.arrayBuffer()
     );
 
@@ -35,19 +498,177 @@ const generatePDF = async (name) => {
    const pages = pdfDoc.getPages();
    const firstPage = pages[0];
  
-   // Draw a string of text diagonally across the first page
+   // Generate unique certificate code
+   const certificateCode = generateCertificateCode();
+   
+   // Save certificate data
+   saveCertificate(certificateCode, name, email, phone, college);
+ 
+   // Calculate text width to center it
+   const fontSize = 55;
+   const textWidth = SanChezFont.widthOfTextAtSize(name, fontSize);
+   
+   // Get page dimensions
+   const { width: pageWidth } = firstPage.getSize();
+   
+   // Calculate center position (page center - half of text width)
+   const centerX = (pageWidth - textWidth) / 2;
+ 
+   // Draw a string of text centered on the first page
    firstPage.drawText(name, {
-     x: 600,
-     y: 470,
-     size: 55,
-     font: SanChezFont ,
+     x: centerX,
+     y: 270,
+     size: fontSize,
+     font: SanChezFont,
      color: rgb(1.0, 0.84, 0.00),
+   });
+
+   // Add certificate code (smaller font, positioned at bottom)
+   const codeFontSize = 12;
+   const codeTextWidth = SanChezFont.widthOfTextAtSize(certificateCode, codeFontSize);
+   const codeCenterX = (pageWidth - codeTextWidth) / 2;
+   
+   firstPage.drawText(certificateCode, {
+     x: codeCenterX,
+     y: 50, // Position at bottom of certificate
+     size: codeFontSize,
+     font: SanChezFont,
+     color: rgb(0.5, 0.5, 0.5), // Gray color for subtle appearance
    });
  
   // Serialize the PDFDocument to bytes (a Uint8Array)
   const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
 
-  saveAs(pdfDataUri,"Certificate for Completion.pdf")
+  // Create a temporary link to download the PDF
+  const link = document.createElement('a');
+  link.href = pdfDataUri;
+  link.download = "Certificate for Appreciation.pdf";
+  
+  // Add click event to copy certificate code when PDF is opened
+  link.addEventListener('click', () => {
+    // Show a notification about the certificate code
+    showCertificateCodeNotification(certificateCode);
+  });
+  
+  // Trigger download
+  link.click();
+  
+  // Clean up
+  link.remove();
+};
+
+// Function to show certificate code notification
+const showCertificateCodeNotification = (certificateCode) => {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    z-index: 10000;
+    max-width: 400px;
+    font-family: Arial, sans-serif;
+    animation: slideIn 0.5s ease-out;
+  `;
+  
+  notification.innerHTML = `
+    <div style="margin-bottom: 15px;">
+      <strong style="font-size: 16px;">Certificate Generated Successfully! 🎉</strong>
+    </div>
+    <div style="margin-bottom: 15px; font-size: 14px;">
+      Your certificate code is: <strong>${certificateCode}</strong>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button id="copyCodeBtn" style="
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.3s;
+      ">Copy Code</button>
+      <button id="closeNotificationBtn" style="
+        background: #f44336;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.3s;
+      ">Close</button>
+    </div>
+  `;
+  
+  // Add CSS animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // Add to page
+  document.body.appendChild(notification);
+  
+  // Copy code functionality
+  const copyBtn = notification.querySelector('#copyCodeBtn');
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(certificateCode);
+      copyBtn.textContent = 'Copied! ✓';
+      copyBtn.style.background = '#45a049';
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy Code';
+        copyBtn.style.background = '#4CAF50';
+      }, 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = certificateCode;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      copyBtn.textContent = 'Copied! ✓';
+      copyBtn.style.background = '#45a049';
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy Code';
+        copyBtn.style.background = '#4CAF50';
+      }, 2000);
+    }
+  });
+  
+  // Close notification
+  const closeBtn = notification.querySelector('#closeNotificationBtn');
+  closeBtn.addEventListener('click', () => {
+    notification.remove();
+    style.remove();
+  });
+  
+  // Auto-close after 10 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+      style.remove();
+    }
+  }, 10000);
 };
 
  
