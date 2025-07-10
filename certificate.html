@@ -275,6 +275,51 @@
             display: none !important;
          }
          
+         /* Loading state styles */
+         .send.loading {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+            cursor: wait !important;
+            position: relative !important;
+            overflow: hidden !important;
+         }
+         
+         .send.loading:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+         }
+         
+         @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+         }
+         
+         .send.loading:hover {
+            transform: none !important;
+            box-shadow: 0 8px 25px rgba(23, 162, 184, 0.4) !important;
+            letter-spacing: 2px !important;
+         }
+         
+         /* Success state styles */
+         .send.success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+            cursor: default !important;
+         }
+         
+         .send.success:hover {
+            transform: none !important;
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4) !important;
+            letter-spacing: 2px !important;
+         }
+         
          /* Fix for contact form positioning */
          #contact .main_form {
             margin-bottom: 0 !important;
@@ -562,45 +607,7 @@
   //Reference for form collection(3)
   let formMessage = firebase.database().ref('Gehu Bhimtal 11 March 2024 :- ');
   
-  //listen for submit event//(1)
-  document
-    .getElementById('fo')
-    .addEventListener('submit', formSubmit);
-  
-  //Submit form(1.2)
-  function formSubmit(e) {
-    e.preventDefault();
-    // Get Values from the DOM
-    let name = document.querySelector('#name').value;
-    let email = document.querySelector('#email').value;
-    let password = document.querySelector('#phone').value;
-    let bio = document.querySelector('#college').value;
-    
-    // Check if all fields are valid before proceeding
-    if (name && email && password && bio) {
-      //send message values to Firebase
-      sendMessage(name, email, password, bio);
-      
-      // Generate PDF certificate
-      if (typeof generatePDF === 'function') {
-        generatePDF(name, email, password, bio);
-      }
-  
-      //Show Alert Message(5)
-      document.querySelector('.alert').style.display = 'block';
-  
-      //Hide Alert Message After Seven Seconds(6)
-      setTimeout(function() {
-        document.querySelector('.alert').style.display = 'none';
-      }, 7000);
-  
-      //Form Reset After Submission(7)
-      document.getElementById('fo').reset();
-    }
-  }
-  
   //Send Message to Firebase(4)
-  
   function sendMessage(name, email, password, bio) {
     let newFormMessage = formMessage.push();
     newFormMessage.set({

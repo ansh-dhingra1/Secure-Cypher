@@ -260,6 +260,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailInput = document.getElementById("email");
     const phoneInput = document.getElementById("phone");
     const collegeInput = document.getElementById("college");
+    const form = document.getElementById("fo");
+    
+    // Prevent form submission on Enter key
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Don't do anything here - let the button click handler handle everything
+        });
+    }
     
     // Name validation - on blur and input
     nameInput.addEventListener('focus', () => {
@@ -329,8 +338,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-submitBtn.addEventListener("click", () => {
+submitBtn.addEventListener("click", async (e) => {
+    e.preventDefault(); // Prevent form submission
     console.log('Submit button clicked');
+    
+    // Prevent multiple clicks
+    if (submitBtn.disabled) {
+        console.log('Button already disabled, ignoring click');
+        return;
+    }
     
     const val = userName.value;
     const email = document.getElementById("email").value;
@@ -348,12 +364,67 @@ submitBtn.addEventListener("click", () => {
     console.log('Validation results:', { isNameValid, isEmailValid, isPhoneValid, isCollegeValid });
     
     if (isNameValid && isEmailValid && isPhoneValid && isCollegeValid) {
-        console.log('All validations passed, calling generatePDF...');
+        console.log('All validations passed, starting certificate generation...');
+        
+        // Set loading state
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Generating Certificate...';
+        submitBtn.disabled = true;
+        submitBtn.classList.add('loading');
+        
         try {
-            generatePDF(val, email, phone, college);
+            // Save to Firebase first
+            if (typeof sendMessage === 'function') {
+                sendMessage(val, email, phone, college);
+            }
+            
+            // Generate PDF certificate
+            await generatePDF(val, email, phone, college);
+            
+            // Show success alert
+            const alertElement = document.querySelector('.alert');
+            if (alertElement) {
+                alertElement.style.display = 'block';
+                setTimeout(function() {
+                    alertElement.style.display = 'none';
+                }, 7000);
+            }
+            
+            // Reset form
+            document.getElementById('fo').reset();
+            
+            // Reset validation states
+            fieldTouched = {
+                name: false,
+                email: false,
+                phone: false,
+                college: false
+            };
+            
+            // Reset input classes
+            document.getElementById("name").classList.remove("input-error", "input-valid");
+            document.getElementById("email").classList.remove("input-error", "input-valid");
+            document.getElementById("phone").classList.remove("input-error", "input-valid");
+            document.getElementById("college").classList.remove("input-error", "input-valid");
+            
+            // Show success state
+            submitBtn.classList.remove('loading');
+            submitBtn.classList.add('success');
+            submitBtn.textContent = 'Certificate Generated!';
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.classList.remove('success');
+                submitBtn.disabled = true; // Keep disabled until form is filled again
+            }, 3000);
+            
         } catch (error) {
             console.error('Error calling generatePDF:', error);
             alert('Error starting certificate generation: ' + error.message);
+            
+            // Reset button state on error
+            submitBtn.textContent = originalText;
+            submitBtn.classList.remove('loading', 'success');
+            submitBtn.disabled = false;
         }
     } else {
         console.log('Validation failed, focusing on first invalid field');
@@ -507,29 +578,55 @@ document.addEventListener('DOMContentLoaded', function() {
 const generatePDF = async (name, email, phone, college) => {
     try {
         console.log('Starting PDF generation...');
+        console.log('Parameters:', { name, email, phone, college });
         
         // Check if required libraries are loaded
         if (typeof PDFDocument === 'undefined') {
-            throw new Error('PDFLib is not loaded');
+            console.error('PDFLib is not loaded');
+            throw new Error('PDFLib is not loaded. Please refresh the page and try again.');
         }
         
         if (typeof fontkit === 'undefined') {
-            throw new Error('Fontkit is not loaded');
+            console.error('Fontkit is not loaded');
+            throw new Error('Fontkit is not loaded. Please refresh the page and try again.');
         }
+        
+        console.log('Libraries loaded successfully');
+        
+        // Generate unique certificate code first
+        const certificateCode = generateCertificateCode();
+        console.log('Generated certificate code:', certificateCode);
+        
+        // Save certificate data to Firebase
+        console.log('Saving certificate to Firebase...');
+        saveCertificate(certificateCode, name, email, phone, college);
         
         console.log('Fetching PDF template...');
         let existingPdfBytes;
+        let useFallback = false;
+        
         try {
-            existingPdfBytes = await fetch("Certificate_nagpur.pdf").then((res) => {
-                if (!res.ok) {
-                    throw new Error(`Failed to fetch PDF template: ${res.status} ${res.statusText}`);
-                }
-                return res.arrayBuffer();
-            });
+            const response = await fetch("Certificate_nagpur.pdf");
+            console.log('PDF fetch response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch PDF template: ${response.status} ${response.statusText}`);
+            }
+            
+            existingPdfBytes = await response.arrayBuffer();
+            console.log('PDF template loaded successfully, size:', existingPdfBytes.byteLength);
         } catch (error) {
-            console.warn('Could not fetch PDF template, creating new PDF...');
+            console.warn('Could not fetch PDF template, creating fallback PDF...', error);
+            useFallback = true;
+        }
+        
+        let pdfDoc;
+        let SanChezFont;
+        
+        if (useFallback) {
+            console.log('Creating fallback PDF...');
             // Create a new PDF if template is not found
-            const pdfDoc = PDFDocument.create();
+            pdfDoc = PDFDocument.create();
             const page = pdfDoc.addPage([612, 792]); // Standard letter size
             
             // Add basic certificate content
@@ -547,10 +644,6 @@ const generatePDF = async (name, email, phone, college) => {
                 color: rgb(0, 0, 0),
             });
             
-            // Continue with the rest of the function
-            const certificateCode = generateCertificateCode();
-            saveCertificate(certificateCode, name, email, phone, college);
-            
             // Add name
             page.drawText(name, {
                 x: 200,
@@ -567,104 +660,94 @@ const generatePDF = async (name, email, phone, college) => {
                 color: rgb(0.5, 0.5, 0.5),
             });
             
-            const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
-            const link = document.createElement('a');
-            link.href = pdfDataUri;
-            link.download = "Certificate for Appreciation.pdf";
-            link.click();
-            link.remove();
+            console.log('Fallback PDF created successfully');
+        } else {
+            console.log('Loading PDF document from template...');
+            // Load a PDFDocument from the existing PDF bytes
+            pdfDoc = await PDFDocument.load(existingPdfBytes);
             
-            showCertificateCodeNotification(certificateCode);
-            console.log('PDF generation completed successfully!');
-            return;
-        }
+            console.log('Registering fontkit...');
+            pdfDoc.registerFontkit(fontkit);
 
-        console.log('Loading PDF document...');
-        // Load a PDFDocument from the existing PDF bytes
-        const pdfDoc = await PDFDocument.load(existingPdfBytes);
-        
-        console.log('Registering fontkit...');
-        pdfDoc.registerFontkit(fontkit);
-
-        console.log('Fetching font...');
-        //get font
-        let fontBytes;
-        let SanChezFont;
-        
-        try {
-            fontBytes = await fetch("Paul-le1V.ttf").then((res) => {
-                if (!res.ok) {
-                    throw new Error(`Failed to fetch font: ${res.status} ${res.statusText}`);
+            console.log('Fetching font...');
+            //get font
+            let fontBytes;
+            
+            try {
+                const fontResponse = await fetch("Paul-le1V.ttf");
+                console.log('Font fetch response status:', fontResponse.status);
+                
+                if (!fontResponse.ok) {
+                    throw new Error(`Failed to fetch font: ${fontResponse.status} ${fontResponse.statusText}`);
                 }
-                return res.arrayBuffer();
-            });
+                
+                fontBytes = await fontResponse.arrayBuffer();
+                console.log('Font loaded successfully, size:', fontBytes.byteLength);
+                
+                console.log('Embedding font...');
+                // Embed our custom font in the document
+                SanChezFont = await pdfDoc.embedFont(fontBytes);
+                console.log('Font embedded successfully');
+            } catch (fontError) {
+                console.warn('Font loading failed, using default font:', fontError);
+                // Use default font if custom font fails
+                SanChezFont = await pdfDoc.embedFont(await pdfDoc.getFont('Helvetica'));
+                console.log('Using default Helvetica font');
+            }
             
-            console.log('Embedding font...');
-            // Embed our custom font in the document
-            SanChezFont = await pdfDoc.embedFont(fontBytes);
-        } catch (fontError) {
-            console.warn('Font loading failed, using default font:', fontError);
-            // Use default font if custom font fails
-            SanChezFont = await pdfDoc.embedFont(await pdfDoc.getFont('Helvetica'));
-        }
-        
-        // Get the first page of the document
-        const pages = pdfDoc.getPages();
-        const firstPage = pages[0];
-     
-        // Generate unique certificate code
-        const certificateCode = generateCertificateCode();
-        
-        // Save certificate data
-        saveCertificate(certificateCode, name, email, phone, college);
-     
-        // Calculate text width to center it
-        const fontSize = 55;
-        const textWidth = SanChezFont.widthOfTextAtSize(name, fontSize);
-        
-        // Get page dimensions
-        const { width: pageWidth } = firstPage.getSize();
-        
-        // Calculate center position (page center - half of text width)
-        const centerX = (pageWidth - textWidth) / 2;
-     
-        // Draw a string of text centered on the first page
-        firstPage.drawText(name, {
-          x: centerX,
-          y: 270,
-          size: fontSize,
-          font: SanChezFont,
-          color: rgb(1.0, 0.84, 0.00),
-        });
+            // Get the first page of the document
+            const pages = pdfDoc.getPages();
+            const firstPage = pages[0];
+            console.log('Got first page, dimensions:', firstPage.getSize());
+         
+            // Calculate text width to center it
+            const fontSize = 55;
+            const textWidth = SanChezFont.widthOfTextAtSize(name, fontSize);
+            console.log('Name text width:', textWidth);
+            
+            // Get page dimensions
+            const { width: pageWidth } = firstPage.getSize();
+            console.log('Page width:', pageWidth);
+            
+            // Calculate center position (page center - half of text width)
+            const centerX = (pageWidth - textWidth) / 2;
+            console.log('Calculated center X position:', centerX);
+         
+            // Draw a string of text centered on the first page
+            firstPage.drawText(name, {
+              x: centerX,
+              y: 270,
+              size: fontSize,
+              font: SanChezFont,
+              color: rgb(1.0, 0.84, 0.00),
+            });
+            console.log('Name drawn on PDF');
 
-        // Add certificate code (smaller font, positioned at bottom)
-        const codeFontSize = 12;
-        const codeTextWidth = SanChezFont.widthOfTextAtSize(certificateCode, codeFontSize);
-        const codeCenterX = (pageWidth - codeTextWidth) / 2;
-        
-        firstPage.drawText(certificateCode, {
-          x: codeCenterX,
-          y: 50, // Position at bottom of certificate
-          size: codeFontSize,
-          font: SanChezFont,
-          color: rgb(0.5, 0.5, 0.5), // Gray color for subtle appearance
-        });
+            // Add certificate code (smaller font, positioned at bottom)
+            const codeFontSize = 12;
+            const codeTextWidth = SanChezFont.widthOfTextAtSize(certificateCode, codeFontSize);
+            const codeCenterX = (pageWidth - codeTextWidth) / 2;
+            
+            firstPage.drawText(certificateCode, {
+              x: codeCenterX,
+              y: 50, // Position at bottom of certificate
+              size: codeFontSize,
+              font: SanChezFont,
+              color: rgb(0.5, 0.5, 0.5), // Gray color for subtle appearance
+            });
+            console.log('Certificate code drawn on PDF');
+        }
      
         console.log('Serializing PDF...');
         // Serialize the PDFDocument to bytes (a Uint8Array)
         const pdfDataUri = await pdfDoc.saveAsBase64({ dataUri: true });
+        console.log('PDF serialized successfully');
 
         console.log('Creating download link...');
         // Create a temporary link to download the PDF
         const link = document.createElement('a');
         link.href = pdfDataUri;
         link.download = "Certificate for Appreciation.pdf";
-        
-        // Add click event to copy certificate code when PDF is opened
-        link.addEventListener('click', () => {
-          // Show a notification about the certificate code
-          showCertificateCodeNotification(certificateCode);
-        });
         
         console.log('Triggering download...');
         // Trigger download
@@ -674,6 +757,9 @@ const generatePDF = async (name, email, phone, college) => {
         link.remove();
         
         console.log('PDF generation completed successfully!');
+        
+        // Show certificate code notification
+        showCertificateCodeNotification(certificateCode);
         
     } catch (error) {
         console.error('Error generating PDF:', error);
@@ -814,5 +900,91 @@ const showCertificateCodeNotification = (certificateCode) => {
     }
   }, 10000);
 };
+
+// Function to check if required files are accessible
+const checkRequiredFiles = async () => {
+    const files = [
+        { name: 'PDF Template', url: 'Certificate_nagpur.pdf' },
+        { name: 'Font File', url: 'Paul-le1V.ttf' }
+    ];
+    
+    const results = [];
+    
+    for (const file of files) {
+        try {
+            const response = await fetch(file.url, { method: 'HEAD' });
+            results.push({
+                name: file.name,
+                accessible: response.ok,
+                status: response.status,
+                statusText: response.statusText
+            });
+        } catch (error) {
+            results.push({
+                name: file.name,
+                accessible: false,
+                error: error.message
+            });
+        }
+    }
+    
+    console.log('File accessibility check results:', results);
+    return results;
+};
+
+// Check files when page loads
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('=== Secure Cypher Certificate System Initialization ===');
+    console.log('Checking required files...');
+    const fileCheck = await checkRequiredFiles();
+    
+    const inaccessibleFiles = fileCheck.filter(file => !file.accessible);
+    if (inaccessibleFiles.length > 0) {
+        console.warn('Some required files are not accessible:', inaccessibleFiles);
+        console.warn('Certificate generation may use fallback mode');
+    } else {
+        console.log('All required files are accessible');
+    }
+    
+    // Check if all required libraries are loaded
+    console.log('Checking required libraries...');
+    const libraries = {
+        'PDFLib': typeof PDFDocument !== 'undefined',
+        'Fontkit': typeof fontkit !== 'undefined',
+        'Firebase': typeof firebase !== 'undefined',
+        'jQuery': typeof $ !== 'undefined'
+    };
+    
+    console.log('Library status:', libraries);
+    
+    const missingLibraries = Object.entries(libraries).filter(([name, loaded]) => !loaded);
+    if (missingLibraries.length > 0) {
+        console.error('Missing libraries:', missingLibraries.map(([name]) => name));
+    } else {
+        console.log('All required libraries are loaded');
+    }
+    
+    // Check if form elements exist
+    console.log('Checking form elements...');
+    const formElements = {
+        'Form': document.getElementById('fo'),
+        'Name Input': document.getElementById('name'),
+        'Email Input': document.getElementById('email'),
+        'Phone Input': document.getElementById('phone'),
+        'College Input': document.getElementById('college'),
+        'Submit Button': document.getElementById('submitBtn')
+    };
+    
+    console.log('Form elements status:', formElements);
+    
+    const missingElements = Object.entries(formElements).filter(([name, element]) => !element);
+    if (missingElements.length > 0) {
+        console.error('Missing form elements:', missingElements.map(([name]) => name));
+    } else {
+        console.log('All form elements are present');
+    }
+    
+    console.log('=== Initialization Complete ===');
+});
 
  
